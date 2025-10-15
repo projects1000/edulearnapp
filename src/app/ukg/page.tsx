@@ -213,24 +213,31 @@ function UKGPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 flex flex-col items-center justify-center p-4 sm:p-8">
-      <header className="w-full max-w-2xl text-center mb-8">
+      <header className="w-full max-w-2xl text-center mb-4">
         <h1 className="text-4xl sm:text-5xl font-extrabold text-yellow-700 mb-2 drop-shadow-lg">UKG Subjects</h1>
-        <p className="text-lg sm:text-xl text-pink-700 font-semibold">Select a subject to start learning!</p>
       </header>
       <main className="w-full max-w-2xl flex flex-col gap-6">
         {/* Subject cards */}
         {!selectedSubject && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {subjects.map(subject => (
-              <button
-                key={subject.key}
-                className="bg-white hover:bg-yellow-200 text-yellow-700 font-bold py-6 rounded-xl shadow-lg text-lg border-2 border-yellow-300 transition-colors"
-                onClick={() => setSelectedSubject(subject.key)}
-              >
-                {subject.label}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {subjects.map(subject => (
+                <button
+                  key={subject.key}
+                  className="bg-white hover:bg-yellow-200 text-yellow-700 font-bold py-6 rounded-xl shadow-lg text-lg border-2 border-yellow-300 transition-colors"
+                  onClick={() => setSelectedSubject(subject.key)}
+                >
+                  {subject.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-8 flex justify-center">
+              <a href="/" className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold">
+                <span className="text-2xl">&#8592;</span>
+                <span>BACK</span>
+              </a>
+            </div>
+          </>
         )}
 
         {/* Math tasks */}

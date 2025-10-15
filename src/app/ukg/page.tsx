@@ -67,17 +67,14 @@ function AscendingDescendingTask() {
   function handleDragEnd(event: import("@dnd-kit/core").DragEndEvent) {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-  const oldIndex = numbers.indexOf(Number(active.id));
-  const newIndex = numbers.indexOf(Number(over.id));
+      const oldIndex = numbers.findIndex(n => n === Number(active.id));
+      const newIndex = numbers.findIndex(n => n === Number(over.id));
       if (oldIndex !== -1 && newIndex !== -1) {
-        const swapped = [...numbers];
-        const temp = swapped[oldIndex];
-        swapped[oldIndex] = swapped[newIndex];
-        swapped[newIndex] = temp;
-        setNumbers(swapped);
+        const reordered = arrayMove(numbers, oldIndex, newIndex);
+        setNumbers(reordered);
         setTimeout(() => {
-          const correct = [...swapped].sort((a, b) => mode === 'asc' ? a - b : b - a);
-          if (swapped.every((n, i) => n === correct[i])) {
+          const correct = [...reordered].sort((a, b) => mode === 'asc' ? a - b : b - a);
+          if (reordered.every((n, i) => n === correct[i])) {
             setResult('🎉 Good job!');
             setTimeout(() => setResult(null), 2000);
           } else {

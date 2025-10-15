@@ -46,32 +46,34 @@ function AscendingDescendingTask() {
         <span className="text-xl text-blue-700">Arrange in {mode === 'asc' ? <span className="font-extrabold">Ascending</span> : <span className="font-extrabold">Descending</span>} Order</span>
         <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
-      <div className="flex gap-4 justify-center mb-4 items-end">
-        {numbers.map((num, idx) => (
-          <div key={idx} className="flex flex-col items-center">
-            {idx === 0 && (
-              <span className="text-xs text-green-700 font-bold mb-1">
-                {mode === 'asc' ? 'Smaller' : 'Larger'}
-              </span>
-            )}
-            <div
-              draggable
-              onDragStart={() => onDragStart(idx)}
-              onDragOver={e => e.preventDefault()}
-              onDrop={() => onDrop(idx)}
-              onDragEnd={onDragEnd}
-              className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200 ${draggedIdx === idx ? 'opacity-50' : ''}`}
-              style={{ minWidth: 60 }}
-            >
-              {num}
+      <div className="w-full overflow-x-auto mb-4">
+        <div className="flex gap-4 justify-center items-end min-w-[340px] sm:min-w-0">
+          {numbers.map((num, idx) => (
+            <div key={idx} className="flex flex-col items-center">
+              {idx === 0 && (
+                <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
+                  {mode === 'asc' ? 'Smaller' : 'Larger'}
+                </span>
+              )}
+              <div
+                draggable
+                onDragStart={() => onDragStart(idx)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={() => onDrop(idx)}
+                onDragEnd={onDragEnd}
+                className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200 ${draggedIdx === idx ? 'opacity-50' : ''}`}
+                style={{ minWidth: 60 }}
+              >
+                {num}
+              </div>
+              {idx === numbers.length - 1 && (
+                <span className="text-xs text-blue-700 font-bold mt-1 whitespace-nowrap">
+                  {mode === 'asc' ? 'Larger' : 'Smaller'}
+                </span>
+              )}
             </div>
-            {idx === numbers.length - 1 && (
-              <span className="text-xs text-blue-700 font-bold mt-1">
-                {mode === 'asc' ? 'Larger' : 'Smaller'}
-              </span>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       <button
         onClick={nextTask}

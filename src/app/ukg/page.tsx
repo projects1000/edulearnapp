@@ -76,10 +76,10 @@ function AscendingDescendingTask() {
             </div>
           ))}
         </div>
-        <div className="flex sm:hidden justify-center items-end w-full" style={{height: 220}}>
-          {/* Mobile: diagonal row from left-bottom to right-top */}
+        <div className="flex sm:hidden justify-center items-center w-full" style={{height: 220, position: 'relative'}}>
+          {/* Mobile: diagonal row, centered in middle of box */}
           {numbers.map((num, idx) => (
-            <div key={idx} className="flex flex-col items-center" style={{position: 'absolute', left: `${idx * 18}%`, bottom: `${idx * 36}px`, transform: `translateY(-${idx * 18}px)`}}>
+            <div key={idx} className="flex flex-col items-center" style={{position: 'absolute', left: `calc(10% + ${idx * 16}%)`, top: `calc(50% - 60px + ${-idx * 28}px)`}}>
               {idx === 0 && (
                 <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
                   {mode === 'asc' ? 'Smaller' : 'Larger'}

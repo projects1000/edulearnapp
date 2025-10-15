@@ -21,7 +21,7 @@ function EnglishNumberSpellingTask() {
   const [page, setPage] = useState(1);
   const [selectedNumbers, setSelectedNumbers] = useState<Array<{ num: number, spellingIndex: number }>>([]);
 
-  const numbers = Array.from({ length: 10 }, (_, i) => (page - 1) * 10 + i + 1);
+  const numbers = Array.from({ length: 5 }, (_, i) => (page - 1) * 5 + i + 1);
 
   useEffect(() => {
     // For each selected number, animate its spelling
@@ -50,8 +50,8 @@ function EnglishNumberSpellingTask() {
   }
 
   function handleNextPage() {
-    setPage(page + 1);
-    setSelectedNumbers([]);
+  setPage(page + 1);
+  setSelectedNumbers([]);
   }
   function handlePrevPage() {
     if (page > 1) {

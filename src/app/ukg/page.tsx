@@ -64,9 +64,9 @@ function AscendingDescendingTask() {
     })
   );
 
-  function handleDragEnd(event: any) {
+  function handleDragEnd(event: import("@dnd-kit/core").DragEndEvent) {
     const { active, over } = event;
-    if (active.id !== over?.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = numbers.findIndex(n => n === active.id);
       const newIndex = numbers.findIndex(n => n === over.id);
       const newNumbers = arrayMove(numbers, oldIndex, newIndex);

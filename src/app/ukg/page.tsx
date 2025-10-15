@@ -76,6 +76,7 @@ function AscendingDescendingTask() {
         const correct = [...newNumbers].sort((a, b) => mode === 'asc' ? a - b : b - a);
         if (newNumbers.every((n, i) => n === correct[i])) {
           setResult('🎉 Good job!');
+          setTimeout(() => setResult(null), 2000);
         } else {
           setResult(null);
         }
@@ -126,8 +127,17 @@ function AscendingDescendingTask() {
       >
         Next
       </button>
-      {result && (
-        <div className={`text-xl font-semibold mt-2 ${result.startsWith('🎉') ? 'text-green-600' : 'text-red-600'}`}>{result}</div>
+      {result && result.startsWith('🎉') && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white bg-opacity-90 rounded-2xl shadow-2xl p-8 flex flex-col items-center animate-bounce">
+            <span className="text-6xl">🎉</span>
+            <span className="text-3xl font-extrabold text-green-600 mb-2">Congratulations!</span>
+            <span className="text-xl text-yellow-700">You arranged the numbers correctly!</span>
+          </div>
+        </div>
+      )}
+      {result && !result.startsWith('🎉') && (
+        <div className="text-xl font-semibold mt-2 text-red-600">{result}</div>
       )}
       <div className="mt-2 text-sm text-gray-500">Tip: Drag numbers to arrange from small to big (ascending) or big to small (descending).</div>
     </div>

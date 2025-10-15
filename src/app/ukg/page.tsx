@@ -1,0 +1,314 @@
+"use client";
+import { useState, useEffect } from "react";
+
+// Number spelling data
+const numberSpellings: { [key: number]: string } = {
+  1: "ONE", 2: "TWO", 3: "THREE", 4: "FOUR", 5: "FIVE", 6: "SIX", 7: "SEVEN", 8: "EIGHT", 9: "NINE", 10: "TEN",
+  11: "ELEVEN", 12: "TWELVE", 13: "THIRTEEN", 14: "FOURTEEN", 15: "FIFTEEN", 16: "SIXTEEN", 17: "SEVENTEEN", 18: "EIGHTEEN", 19: "NINETEEN", 20: "TWENTY",
+  21: "TWENTY ONE", 22: "TWENTY TWO", 23: "TWENTY THREE", 24: "TWENTY FOUR", 25: "TWENTY FIVE", 26: "TWENTY SIX", 27: "TWENTY SEVEN", 28: "TWENTY EIGHT", 29: "TWENTY NINE", 30: "THIRTY",
+  31: "THIRTY ONE", 32: "THIRTY TWO", 33: "THIRTY THREE", 34: "THIRTY FOUR", 35: "THIRTY FIVE", 36: "THIRTY SIX", 37: "THIRTY SEVEN", 38: "THIRTY EIGHT", 39: "THIRTY NINE", 40: "FORTY",
+  41: "FORTY ONE", 42: "FORTY TWO", 43: "FORTY THREE", 44: "FORTY FOUR", 45: "FORTY FIVE", 46: "FORTY SIX", 47: "FORTY SEVEN", 48: "FORTY EIGHT", 49: "FORTY NINE", 50: "FIFTY",
+  51: "FIFTY ONE", 52: "FIFTY TWO", 53: "FIFTY THREE", 54: "FIFTY FOUR", 55: "FIFTY FIVE", 56: "FIFTY SIX", 57: "FIFTY SEVEN", 58: "FIFTY EIGHT", 59: "FIFTY NINE", 60: "SIXTY",
+  61: "SIXTY ONE", 62: "SIXTY TWO", 63: "SIXTY THREE", 64: "SIXTY FOUR", 65: "SIXTY FIVE", 66: "SIXTY SIX", 67: "SIXTY SEVEN", 68: "SIXTY EIGHT", 69: "SIXTY NINE", 70: "SEVENTY",
+  71: "SEVENTY ONE", 72: "SEVENTY TWO", 73: "SEVENTY THREE", 74: "SEVENTY FOUR", 75: "SEVENTY FIVE", 76: "SEVENTY SIX", 77: "SEVENTY SEVEN", 78: "SEVENTY EIGHT", 79: "SEVENTY NINE", 80: "EIGHTY",
+  81: "EIGHTY ONE", 82: "EIGHTY TWO", 83: "EIGHTY THREE", 84: "EIGHTY FOUR", 85: "EIGHTY FIVE", 86: "EIGHTY SIX", 87: "EIGHTY SEVEN", 88: "EIGHTY EIGHT", 89: "EIGHTY NINE", 90: "NINETY",
+  91: "NINETY ONE", 92: "NINETY TWO", 93: "NINETY THREE", 94: "NINETY FOUR", 95: "NINETY FIVE", 96: "NINETY SIX", 97: "NINETY SEVEN", 98: "NINETY EIGHT", 99: "NINETY NINE", 100: "ONE HUNDRED"
+  // Add more as needed
+};
+
+function EnglishNumberSpellingTask() {
+  const [page, setPage] = useState(1);
+  const [selectedNumbers, setSelectedNumbers] = useState<Array<{ num: number, spellingIndex: number }>>([]);
+
+  const numbers = Array.from({ length: 10 }, (_, i) => (page - 1) * 10 + i + 1);
+
+  useEffect(() => {
+    // For each selected number, animate its spelling
+    selectedNumbers.forEach(({ num, spellingIndex }) => {
+      const spelling = numberSpellings[num];
+      if (spellingIndex < spelling.length) {
+        const timer = setTimeout(() => {
+          setSelectedNumbers(current => current.map(item =>
+            item.num === num && item.spellingIndex === spellingIndex
+              ? { ...item, spellingIndex: item.spellingIndex + 1 }
+              : item
+          ));
+          // Play tick sound
+          const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-16.mp3");
+          audio.play().catch(() => {});
+        }, 400);
+        return () => clearTimeout(timer);
+      }
+    });
+  }, [selectedNumbers]);
+
+  function handleNumberClick(num: number) {
+    // If already selected, do nothing
+    if (selectedNumbers.some(item => item.num === num)) return;
+    setSelectedNumbers(current => [...current, { num, spellingIndex: 0 }]);
+  }
+
+  function handleNextPage() {
+    setPage(page + 1);
+    setSelectedNumbers([]);
+  }
+  function handlePrevPage() {
+    if (page > 1) {
+      setPage(page - 1);
+      setSelectedNumbers([]);
+    }
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center bg-white rounded-xl p-4 shadow-md">
+      <h2 className="text-xl font-bold text-blue-700 mb-2">Write 1 to 100</h2>
+      <div className="flex w-full gap-8">
+        {/* Number list with spelling beside */}
+        <div className="flex flex-col gap-2 items-end">
+          {numbers.map(num => {
+            const selected = selectedNumbers.find(item => item.num === num);
+            const spelling = numberSpellings[num];
+            return (
+              <div key={num} className="flex items-center gap-4 w-full">
+                <button
+                  className={`bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-4 py-2 rounded-xl shadow text-lg border-2 ${selected ? "border-blue-500" : "border-transparent"}`}
+                  onClick={() => handleNumberClick(num)}
+                  disabled={!numberSpellings[num]}
+                  style={{ minWidth: 60 }}
+                >
+                  {num}
+                </button>
+                {/* Spelling animation beside number, in same row */}
+                {selected && (
+                  <div className="flex gap-2 text-3xl font-extrabold text-pink-600 items-center">
+                    {spelling.split("").slice(0, selected.spellingIndex).map((char, idx) => (
+                      <span key={idx} className="animate-pulse drop-shadow-lg">{char}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="flex gap-4 mt-6">
+        <button
+          className="bg-yellow-300 hover:bg-yellow-400 text-white font-bold px-4 py-2 rounded-lg shadow"
+          onClick={handlePrevPage}
+          disabled={page === 1}
+        >
+          Prev
+        </button>
+        <button
+          className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 py-2 rounded-lg shadow"
+          onClick={handleNextPage}
+          disabled={numbers[numbers.length - 1] >= 100}
+        >
+          Next
+        </button>
+      </div>
+      <div className="mt-2 text-sm text-gray-500">Click a number to see its spelling animated!</div>
+    </div>
+  );
+}
+// ...existing code...
+function getChoices(correct: number) {
+  const wrongChoices = [
+    correct + (Math.random() > 0.5 ? 2 : -2),
+    correct + (Math.random() > 0.5 ? 3 : -3),
+  ];
+  return [correct, ...wrongChoices].sort(() => Math.random() - 0.5);
+}
+
+function BeforeAfterNumberTask() {
+  const [number, setNumber] = useState(Math.floor(Math.random() * 89) + 10);
+  const [mode, setMode] = useState<"before" | "after">(Math.random() > 0.5 ? "before" : "after");
+  const [result, setResult] = useState<string | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [choices, setChoices] = useState<number[]>(() => {
+    const correct = mode === "before" ? number - 1 : number + 1;
+    return getChoices(correct);
+  });
+
+  const correct = mode === "before" ? number - 1 : number + 1;
+
+  function checkAnswer(choice: number) {
+    setSelected(choice);
+    if (choice === correct) {
+      setResult("🎉 Correct! Great job!");
+    } else {
+      setResult("❌ Try again!");
+    }
+  }
+
+  function nextTask() {
+    const newNumber = Math.floor(Math.random() * 89) + 10;
+    const newMode = Math.random() > 0.5 ? "before" : "after";
+    const newCorrect = newMode === "before" ? newNumber - 1 : newNumber + 1;
+    setNumber(newNumber);
+    setMode(newMode);
+    setChoices(getChoices(newCorrect));
+    setResult(null);
+    setSelected(null);
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center bg-white rounded-xl p-4 shadow-md">
+      <div className="mb-4 text-lg font-bold text-yellow-700">
+        Select the <span className={mode === "before" ? "font-extrabold text-pink-500" : "font-extrabold text-blue-500"}>{mode.toUpperCase()}</span> number!
+      </div>
+      <div className="flex items-center justify-center gap-8 w-full">
+        {/* Before choices */}
+        <div className="flex flex-col gap-2 items-end">
+          {mode === "before" && choices.map((choice, idx) => (
+            <button
+              key={idx}
+              className={`bg-pink-200 hover:bg-pink-300 text-pink-800 font-bold px-4 py-2 rounded-xl shadow transition-colors text-lg border-2 ${selected === choice ? (choice === correct ? 'border-green-500' : 'border-red-500') : 'border-transparent'}`}
+              onClick={() => checkAnswer(choice)}
+              disabled={selected === correct}
+            >
+              {choice}
+            </button>
+          ))}
+        </div>
+        {/* Number box */}
+        <div className="bg-yellow-200 text-yellow-800 font-extrabold text-4xl rounded-2xl shadow-lg px-8 py-6 border-4 border-yellow-400">
+          {number}
+        </div>
+        {/* After choices */}
+        <div className="flex flex-col gap-2 items-start">
+          {mode === "after" && choices.map((choice, idx) => (
+            <button
+              key={idx}
+              className={`bg-blue-200 hover:bg-blue-300 text-blue-800 font-bold px-4 py-2 rounded-xl shadow transition-colors text-lg border-2 ${selected === choice ? (choice === correct ? 'border-green-500' : 'border-red-500') : 'border-transparent'}`}
+              onClick={() => checkAnswer(choice)}
+              disabled={selected === correct}
+            >
+              {choice}
+            </button>
+          ))}
+        </div>
+      </div>
+      {result && <div className="text-xl font-semibold mt-4">{result}</div>}
+      <button
+        onClick={nextTask}
+        className="mt-4 bg-yellow-400 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-yellow-500 transition-colors"
+      >
+        Next
+      </button>
+      <div className="mt-2 text-sm text-gray-500">Tip: Before number is one less, after number is one more!</div>
+    </div>
+  );
+}
+
+function UKGPage() {
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [activeTask, setActiveTask] = useState<string | null>(null);
+  const subjects = [
+    { key: "math", label: "Math" },
+    { key: "english", label: "English" },
+    { key: "gk", label: "GK" },
+    { key: "puzzle", label: "Puzzle" }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 flex flex-col items-center justify-center p-4 sm:p-8">
+      <header className="w-full max-w-2xl text-center mb-8">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-yellow-700 mb-2 drop-shadow-lg">UKG Subjects</h1>
+        <p className="text-lg sm:text-xl text-pink-700 font-semibold">Select a subject to start learning!</p>
+      </header>
+      <main className="w-full max-w-2xl flex flex-col gap-6">
+        {/* Subject cards */}
+        {!selectedSubject && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {subjects.map(subject => (
+              <button
+                key={subject.key}
+                className="bg-white hover:bg-yellow-200 text-yellow-700 font-bold py-6 rounded-xl shadow-lg text-lg border-2 border-yellow-300 transition-colors"
+                onClick={() => setSelectedSubject(subject.key)}
+              >
+                {subject.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Math tasks */}
+        {selectedSubject === "math" && (
+          <div className="flex flex-col gap-4 items-center">
+            <h2 className="text-2xl font-bold text-pink-700 mb-2">Math Tasks</h2>
+            <button
+              className={`w-full bg-pink-200 hover:bg-pink-300 text-pink-800 font-bold py-3 rounded-xl shadow transition-colors text-lg ${activeTask === "beforeAfter" ? "ring-2 ring-pink-400" : ""}`}
+              onClick={() => setActiveTask("beforeAfter")}
+            >
+              Before/After Number
+            </button>
+            {/* Add more math tasks here */}
+            <div className="w-full mt-6">
+              {activeTask === "beforeAfter" && <BeforeAfterNumberTask />}
+            </div>
+            <button
+              className="mt-4 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold"
+              title="Back"
+              onClick={() => { setSelectedSubject(null); setActiveTask(null); }}
+            >
+              <span className="text-2xl">&#8592;</span>
+              <span>BACK</span>
+            </button>
+          </div>
+        )}
+
+        {/* English tasks */}
+        {selectedSubject === "english" && (
+          <div className="flex flex-col gap-4 items-center">
+            <h2 className="text-2xl font-bold text-pink-700 mb-2">English Tasks</h2>
+            <button
+              className={`w-full bg-blue-200 hover:bg-blue-300 text-blue-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
+              onClick={() => setActiveTask("numberSpelling")}
+            >
+              Write 1 to 100
+            </button>
+            <div className="w-full mt-6">
+              {activeTask === "numberSpelling" && <EnglishNumberSpellingTask />}
+            </div>
+            <button
+              className="mt-4 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold"
+              title="Back"
+              onClick={() => { setSelectedSubject(null); setActiveTask(null); }}
+            >
+              <span className="text-2xl">&#8592;</span>
+              <span>BACK</span>
+            </button>
+          </div>
+        )}
+
+        {/* Other subjects placeholder */}
+        {selectedSubject && selectedSubject !== "math" && (
+          <div className="flex flex-col gap-4 items-center">
+            <h2 className="text-2xl font-bold text-pink-700 mb-2">{subjects.find(s => s.key === selectedSubject)?.label} Tasks</h2>
+            <div className="w-full mt-6 text-gray-500 text-center">Coming soon!</div>
+            <button
+              className="mt-4 flex items-center justify-center w-10 h-10 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-2xl shadow transition-colors"
+              title="Back to Subjects"
+              onClick={() => { setSelectedSubject(null); setActiveTask(null); }}
+            >
+              &#8592;
+            </button>
+          </div>
+        )}
+      </main>
+      <footer className="mt-12 text-center text-sm text-gray-500">
+        &copy; {new Date().getFullYear()} EduLearn Play School. All rights reserved.
+      </footer>
+    </div>
+  );
+}
+export default UKGPage;
+
+
+
+
+
+
+
+

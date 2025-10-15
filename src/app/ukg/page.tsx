@@ -1,5 +1,83 @@
 "use client";
-import { useState, useEffect } from "react";
+// Ascending/Descending Task
+function AscendingDescendingTask() {
+  const [mode, setMode] = useState<'asc' | 'desc'>('asc');
+  const [numbers, setNumbers] = useState(() => {
+    const arr = Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10);
+    return arr.sort(() => Math.random() - 0.5);
+  });
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  function onDragStart(idx: number) {
+    setDraggedIdx(idx);
+  }
+  function onDrop(idx: number) {
+    if (draggedIdx === null || draggedIdx === idx) return;
+    const newNumbers = [...numbers];
+    const [dragged] = newNumbers.splice(draggedIdx, 1);
+    newNumbers.splice(idx, 0, dragged);
+    setNumbers(newNumbers);
+    setDraggedIdx(null);
+  }
+  function onDragEnd() {
+    setDraggedIdx(null);
+  }
+  function checkOrder() {
+    const correct = [...numbers].sort((a, b) => mode === 'asc' ? a - b : b - a);
+    if (numbers.every((n, i) => n === correct[i])) {
+      setResult('🎉 Correct! Great job!');
+    } else {
+      setResult('❌ Try again!');
+    }
+  }
+  function nextTask() {
+    setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5));
+    setResult(null);
+    setMode(Math.random() > 0.5 ? 'asc' : 'desc');
+  }
+  return (
+    <div className="w-full flex flex-col items-center bg-gradient-to-br from-pink-100 via-yellow-100 to-blue-100 rounded-xl p-4 shadow-md">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-2xl font-extrabold text-blue-700">{mode === 'asc' ? 'Arrange in Ascending Order' : 'Arrange in Descending Order'}</span>
+        <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
+      </div>
+      <div className="flex gap-4 justify-center mb-4">
+        {numbers.map((num, idx) => (
+          <div
+            key={idx}
+            draggable
+            onDragStart={() => onDragStart(idx)}
+            onDragOver={e => e.preventDefault()}
+            onDrop={() => onDrop(idx)}
+            onDragEnd={onDragEnd}
+            className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200 ${draggedIdx === idx ? 'opacity-50' : ''}`}
+            style={{ minWidth: 60 }}
+          >
+            {num}
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={checkOrder}
+        className="bg-green-400 hover:bg-green-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-colors mb-2"
+      >
+        Check
+      </button>
+      <button
+        onClick={nextTask}
+        className="bg-blue-400 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-colors mb-2"
+      >
+        Next
+      </button>
+      {result && (
+        <div className={`text-xl font-semibold mt-2 ${result.startsWith('🎉') ? 'text-green-600' : 'text-red-600'}`}>{result}</div>
+      )}
+      <div className="mt-2 text-sm text-gray-500">Tip: Drag numbers to arrange from small to big (ascending) or big to small (descending).</div>
+    </div>
+  );
+}
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 // Number spelling data
@@ -246,16 +324,33 @@ function UKGPage() {
         {/* Math tasks */}
         {selectedSubject === "math" && (
           <div className="flex flex-col gap-4 items-center">
-            <h2 className="text-2xl font-bold text-pink-700 mb-2">Math Tasks</h2>
-            <button
-              className={`w-full bg-pink-200 hover:bg-pink-300 text-pink-800 font-bold py-3 rounded-xl shadow transition-colors text-lg ${activeTask === "beforeAfter" ? "ring-2 ring-pink-400" : ""}`}
-              onClick={() => setActiveTask("beforeAfter")}
-            >
-              Before/After Number
-            </button>
-            {/* Add more math tasks here */}
+            {/* Only show task heading when a task is active */}
+            {activeTask === "beforeAfter" && (
+              <h2 className="text-2xl font-extrabold text-pink-700 mb-2">Before/After Number</h2>
+            )}
+            {activeTask === "ascdesc" && (
+              <h2 className="text-2xl font-extrabold text-yellow-700 mb-2">Ascending/Descending</h2>
+            )}
+            {/* Show task buttons only if no task is active */}
+            {!activeTask && (
+              <>
+                <button
+                  className={`w-full bg-pink-200 hover:bg-pink-300 text-pink-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
+                  onClick={() => setActiveTask("beforeAfter")}
+                >
+                  Before/After Number
+                </button>
+                <button
+                  className={`w-full bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
+                  onClick={() => setActiveTask("ascdesc")}
+                >
+                  Ascending/Descending
+                </button>
+              </>
+            )}
             <div className="w-full mt-6">
               {activeTask === "beforeAfter" && <BeforeAfterNumberTask />}
+              {activeTask === "ascdesc" && <AscendingDescendingTask />}
             </div>
             <button
               className="mt-4 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold"

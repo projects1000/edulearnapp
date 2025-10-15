@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 // Number spelling data
 const numberSpellings: { [key: number]: string } = {
@@ -232,10 +233,10 @@ function UKGPage() {
               ))}
             </div>
             <div className="mt-8 flex justify-center">
-              <a href="/" className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold">
+              <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold">
                 <span className="text-2xl">&#8592;</span>
                 <span>BACK</span>
-              </a>
+              </Link>
             </div>
           </>
         )}

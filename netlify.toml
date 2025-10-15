@@ -1,0 +1,28 @@
+# Netlify configuration for Next.js app
+# Build command
+build = "npm run build"
+
+# Publish directory
+publish = ".next"
+
+# Set environment variables if needed
+# [build.environment]
+# NODE_VERSION = "18"
+
+# Next.js needs to use the Next.js Runtime for Netlify
+[functions]
+directory = ".netlify/functions"
+
+[dev]
+command = "npm run dev"
+
+# Redirect all requests to Next.js
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

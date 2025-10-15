@@ -35,8 +35,30 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-yellow-50 min-h-screen`}>
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-yellow-50 min-h-screen flex flex-col`}>
+        {/* Fixed header */}
+        <header className="fixed top-0 left-0 w-full z-20 bg-gradient-to-r from-yellow-300 via-pink-200 to-blue-200 shadow-lg flex items-center justify-center h-14 rounded-b-2xl">
+          <span className="text-xl font-extrabold text-pink-700 tracking-wide">EduLearnApp</span>
+        </header>
+        {/* Main content with space for header and nav */}
+        <main className="flex-1 pt-16 pb-16 w-full max-w-xl mx-auto">
+          {children}
+        </main>
+        {/* Fixed bottom nav */}
+        <nav className="fixed bottom-0 left-0 w-full z-20 bg-gradient-to-r from-yellow-300 via-pink-200 to-blue-200 shadow-lg flex justify-around items-center h-14 rounded-t-2xl">
+          <a href="/" className="flex flex-col items-center text-pink-700 font-bold text-xs hover:text-blue-700 transition-colors">
+            <span className="text-lg">🏠</span>
+            Home
+          </a>
+          <a href="/ukg" className="flex flex-col items-center text-pink-700 font-bold text-xs hover:text-blue-700 transition-colors">
+            <span className="text-lg">🔢</span>
+            UKG
+          </a>
+          <a href="#" className="flex flex-col items-center text-pink-700 font-bold text-xs hover:text-blue-700 transition-colors">
+            <span className="text-lg">🎨</span>
+            More
+          </a>
+        </nav>
       </body>
     </html>
   );

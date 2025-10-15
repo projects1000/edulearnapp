@@ -39,7 +39,15 @@ function AscendingDescendingTask() {
   return (
     <div className="w-full flex flex-col items-center bg-gradient-to-br from-pink-100 via-yellow-100 to-blue-100 rounded-xl p-4 shadow-md">
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-2xl font-extrabold text-blue-700">{mode === 'asc' ? 'Arrange in Ascending Order' : 'Arrange in Descending Order'}</span>
+        <span className="text-2xl text-blue-700">
+          Arrange in{' '}
+          {mode === 'asc' ? (
+            <span className="font-extrabold">Ascending</span>
+          ) : (
+            <span className="font-extrabold">Descending</span>
+          )}
+          {' '}Order
+        </span>
         <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
       <div className="flex gap-4 justify-center mb-4">

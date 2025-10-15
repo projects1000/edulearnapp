@@ -37,16 +37,16 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-yellow-50 min-h-screen flex flex-col`}>
-        {/* Fixed header */}
-        <header className="fixed top-0 left-0 w-full z-20 bg-gradient-to-r from-yellow-300 via-pink-200 to-blue-200 shadow-lg flex items-center justify-center h-14 rounded-b-2xl">
+        {/* Fixed header: only mobile */}
+        <header className="fixed top-0 left-0 w-full z-20 bg-gradient-to-r from-yellow-300 via-pink-200 to-blue-200 shadow-lg flex items-center justify-center h-14 rounded-b-2xl sm:hidden">
           <span className="text-xl font-extrabold text-pink-700 tracking-wide">EduLearnApp</span>
         </header>
         {/* Main content with space for header and nav */}
-        <main className="flex-1 pt-16 pb-16 w-full max-w-xl mx-auto">
+  <main className="flex-1 pt-16 pb-16 w-full sm:pt-0 sm:pb-0">
           {children}
         </main>
-        {/* Fixed bottom nav */}
-        <nav className="fixed bottom-0 left-0 w-full z-20 bg-gradient-to-r from-yellow-300 via-pink-200 to-blue-200 shadow-lg flex justify-around items-center h-14 rounded-t-2xl">
+        {/* Fixed bottom nav: only mobile */}
+        <nav className="fixed bottom-0 left-0 w-full z-20 bg-gradient-to-r from-yellow-300 via-pink-200 to-blue-200 shadow-lg flex justify-around items-center h-14 rounded-t-2xl sm:hidden">
           <Link href="/" className="flex flex-col items-center text-pink-700 font-bold text-xs hover:text-blue-700 transition-colors">
             <span className="text-lg">🏠</span>
             Home

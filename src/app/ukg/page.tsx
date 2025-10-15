@@ -1,4 +1,51 @@
 "use client";
+import React, { useEffect } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+export type SortableNumberProps = {
+  id: number;
+  idx: number;
+  mode: 'asc' | 'desc';
+  isFirst: boolean;
+  isLast: boolean;
+  mobileStyle?: React.CSSProperties;
+};
+
+export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: SortableNumberProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    minWidth: 60,
+    ...mobileStyle,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="flex flex-col items-center">
+      {isFirst && (
+        <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
+          {mode === 'asc' ? 'Smaller' : 'Larger'}
+        </span>
+      )}
+      <div className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200`}>
+        {id}
+      </div>
+      {isLast && (
+        <span className="text-xs text-blue-700 font-bold mt-1 whitespace-nowrap">
+          {mode === 'asc' ? 'Larger' : 'Smaller'}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // Ascending/Descending Task
 function AscendingDescendingTask() {
   const [mode, setMode] = useState<'asc' | 'desc'>('asc');
@@ -6,31 +53,34 @@ function AscendingDescendingTask() {
     const arr = Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10);
     return arr.sort(() => Math.random() - 0.5);
   });
-  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [result, setResult] = useState<string | null>(null);
 
-  function onDragStart(idx: number) {
-    setDraggedIdx(idx);
-  }
-  function onDrop(idx: number) {
-    if (draggedIdx === null || draggedIdx === idx) return;
-    const newNumbers = [...numbers];
-    const [dragged] = newNumbers.splice(draggedIdx, 1);
-    newNumbers.splice(idx, 0, dragged);
-    setNumbers(newNumbers);
-    setDraggedIdx(null);
-    // Auto check order after drop
-    setTimeout(() => {
-      const correct = [...newNumbers].sort((a, b) => mode === 'asc' ? a - b : b - a);
-      if (newNumbers.every((n, i) => n === correct[i])) {
-        setResult('🎉 Good job!');
-      } else {
-        setResult(null);
-      }
-    }, 200);
-  }
-  function onDragEnd() {
-    setDraggedIdx(null);
+  // dnd-kit sensors for touch and mouse
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
+
+  function handleDragEnd(event: any) {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = numbers.findIndex(n => n === active.id);
+      const newIndex = numbers.findIndex(n => n === over.id);
+      const newNumbers = arrayMove(numbers, oldIndex, newIndex);
+      setNumbers(newNumbers);
+      // Auto check order after drop
+      setTimeout(() => {
+        const correct = [...newNumbers].sort((a, b) => mode === 'asc' ? a - b : b - a);
+        if (newNumbers.every((n, i) => n === correct[i])) {
+          setResult('🎉 Good job!');
+        } else {
+          setResult(null);
+        }
+      }, 200);
+    }
   }
   // Removed manual checkOrder function
   function nextTask() {
@@ -47,63 +97,20 @@ function AscendingDescendingTask() {
         <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
       <div className="w-full mb-4">
-        {/* Mobile: diagonal layout, Desktop: horizontal row */}
-        <div className="hidden sm:flex gap-4 justify-center items-end min-w-[340px] sm:min-w-0">
-          {/* Desktop/Tablet: horizontal row */}
-          {numbers.map((num, idx) => (
-            <div key={idx} className="flex flex-col items-center">
-              {idx === 0 && (
-                <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
-                  {mode === 'asc' ? 'Smaller' : 'Larger'}
-                </span>
-              )}
-              <div
-                draggable
-                onDragStart={() => onDragStart(idx)}
-                onDragOver={e => e.preventDefault()}
-                onDrop={() => onDrop(idx)}
-                onDragEnd={onDragEnd}
-                className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200 ${draggedIdx === idx ? 'opacity-50' : ''}`}
-                style={{ minWidth: 60 }}
-              >
-                {num}
-              </div>
-              {idx === numbers.length - 1 && (
-                <span className="text-xs text-blue-700 font-bold mt-1 whitespace-nowrap">
-                  {mode === 'asc' ? 'Larger' : 'Smaller'}
-                </span>
-              )}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={numbers} strategy={verticalListSortingStrategy}>
+            <div className="hidden sm:flex gap-4 justify-center items-end min-w-[340px] sm:min-w-0">
+              {numbers.map((num, idx) => (
+                <SortableNumber key={num} id={num} idx={idx} mode={mode} isFirst={idx === 0} isLast={idx === numbers.length - 1} />
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="flex sm:hidden justify-center items-center w-full" style={{height: 220, position: 'relative'}}>
-          {/* Mobile: diagonal row, centered in middle of box */}
-          {numbers.map((num, idx) => (
-            <div key={idx} className="flex flex-col items-center" style={{position: 'absolute', left: `calc(10% + ${idx * 16}%)`, top: `calc(50% - 60px + ${-idx * 28}px)`}}>
-              {idx === 0 && (
-                <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
-                  {mode === 'asc' ? 'Smaller' : 'Larger'}
-                </span>
-              )}
-              <div
-                draggable
-                onDragStart={() => onDragStart(idx)}
-                onDragOver={e => e.preventDefault()}
-                onDrop={() => onDrop(idx)}
-                onDragEnd={onDragEnd}
-                className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200 ${draggedIdx === idx ? 'opacity-50' : ''}`}
-                style={{ minWidth: 60 }}
-              >
-                {num}
-              </div>
-              {idx === numbers.length - 1 && (
-                <span className="text-xs text-blue-700 font-bold mt-1 whitespace-nowrap">
-                  {mode === 'asc' ? 'Larger' : 'Smaller'}
-                </span>
-              )}
+            <div className="flex sm:hidden justify-center items-center w-full" style={{height: 220, position: 'relative'}}>
+              {numbers.map((num, idx) => (
+                <SortableNumber key={num} id={num} idx={idx} mode={mode} isFirst={idx === 0} isLast={idx === numbers.length - 1} mobileStyle={{position: 'absolute', left: `calc(10% + ${idx * 16}%)`, top: `calc(50% - 60px + ${-idx * 28}px)`}} />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       </div>
       <button
         onClick={nextTask}
@@ -118,8 +125,22 @@ function AscendingDescendingTask() {
     </div>
   );
 }
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  // useSortable, (removed duplicate)
+  verticalListSortingStrategy
+} from "@dnd-kit/sortable";
+// import { CSS } from "@dnd-kit/utilities"; (removed duplicate)
 
 // Number spelling data
 const numberSpellings: { [key: number]: string } = {

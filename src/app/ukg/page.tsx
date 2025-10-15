@@ -190,7 +190,9 @@ function BeforeAfterNumberTask() {
           ))}
         </div>
       </div>
-      {result && <div className="text-xl font-semibold mt-4">{result}</div>}
+      {result && (
+        <div className={`text-xl font-semibold mt-4 ${result.startsWith('🎉') ? 'text-green-600' : 'text-red-600'}`}>{result}</div>
+      )}
       <button
         onClick={nextTask}
         className="mt-4 bg-yellow-400 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-yellow-500 transition-colors"

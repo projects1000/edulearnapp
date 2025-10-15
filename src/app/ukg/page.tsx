@@ -69,12 +69,14 @@ function AscendingDescendingTask() {
     if (over && active.id !== over.id) {
       const oldIndex = numbers.findIndex(n => n === active.id);
       const newIndex = numbers.findIndex(n => n === over.id);
-      const newNumbers = arrayMove(numbers, oldIndex, newIndex);
-      setNumbers(newNumbers);
+      // Swap the two numbers
+      const swapped = [...numbers];
+      [swapped[oldIndex], swapped[newIndex]] = [swapped[newIndex], swapped[oldIndex]];
+      setNumbers(swapped);
       // Auto check order after drop
       setTimeout(() => {
-        const correct = [...newNumbers].sort((a, b) => mode === 'asc' ? a - b : b - a);
-        if (newNumbers.every((n, i) => n === correct[i])) {
+        const correct = [...swapped].sort((a, b) => mode === 'asc' ? a - b : b - a);
+        if (swapped.every((n, i) => n === correct[i])) {
           setResult('🎉 Good job!');
           setTimeout(() => setResult(null), 2000);
         } else {

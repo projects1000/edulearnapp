@@ -67,22 +67,24 @@ function AscendingDescendingTask() {
   function handleDragEnd(event: import("@dnd-kit/core").DragEndEvent) {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = numbers.findIndex(n => n === active.id);
-      const newIndex = numbers.findIndex(n => n === over.id);
-      // Swap the two numbers
-      const swapped = [...numbers];
-      [swapped[oldIndex], swapped[newIndex]] = [swapped[newIndex], swapped[oldIndex]];
-      setNumbers(swapped);
-      // Auto check order after drop
-      setTimeout(() => {
-        const correct = [...swapped].sort((a, b) => mode === 'asc' ? a - b : b - a);
-        if (swapped.every((n, i) => n === correct[i])) {
-          setResult('🎉 Good job!');
-          setTimeout(() => setResult(null), 2000);
-        } else {
-          setResult(null);
-        }
-      }, 200);
+  const oldIndex = numbers.indexOf(Number(active.id));
+  const newIndex = numbers.indexOf(Number(over.id));
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const swapped = [...numbers];
+        const temp = swapped[oldIndex];
+        swapped[oldIndex] = swapped[newIndex];
+        swapped[newIndex] = temp;
+        setNumbers(swapped);
+        setTimeout(() => {
+          const correct = [...swapped].sort((a, b) => mode === 'asc' ? a - b : b - a);
+          if (swapped.every((n, i) => n === correct[i])) {
+            setResult('🎉 Good job!');
+            setTimeout(() => setResult(null), 2000);
+          } else {
+            setResult(null);
+          }
+        }, 200);
+      }
     }
   }
   // Removed manual checkOrder function

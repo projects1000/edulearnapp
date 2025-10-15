@@ -1,9 +1,9 @@
 # Netlify configuration for Next.js app
 # Build command
-build = "npm run build"
 
-# Publish directory
-publish = ".next"
+[build]
+  command = "npm run build"
+  publish = ".next"
 
 # Set environment variables if needed
 # [build.environment]

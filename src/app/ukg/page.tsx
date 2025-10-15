@@ -104,9 +104,17 @@ function AscendingDescendingTask() {
                 <SortableNumber key={num} id={num} idx={idx} mode={mode} isFirst={idx === 0} isLast={idx === numbers.length - 1} />
               ))}
             </div>
-            <div className="flex sm:hidden justify-center items-center w-full" style={{height: 220, position: 'relative'}}>
+            <div className="flex sm:hidden flex-col justify-start items-center w-full gap-4 py-2">
               {numbers.map((num, idx) => (
-                <SortableNumber key={num} id={num} idx={idx} mode={mode} isFirst={idx === 0} isLast={idx === numbers.length - 1} mobileStyle={{position: 'absolute', left: `calc(10% + ${idx * 16}%)`, top: `calc(50% - 60px + ${-idx * 28}px)`}} />
+                <SortableNumber
+                  key={num}
+                  id={num}
+                  idx={idx}
+                  mode={mode}
+                  isFirst={idx === 0}
+                  isLast={idx === numbers.length - 1}
+                  mobileStyle={{ width: '90%', minHeight: 60 }}
+                />
               ))}
             </div>
           </SortableContext>

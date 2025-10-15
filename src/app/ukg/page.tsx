@@ -19,18 +19,20 @@ function AscendingDescendingTask() {
     newNumbers.splice(idx, 0, dragged);
     setNumbers(newNumbers);
     setDraggedIdx(null);
+    // Auto check order after drop
+    setTimeout(() => {
+      const correct = [...newNumbers].sort((a, b) => mode === 'asc' ? a - b : b - a);
+      if (newNumbers.every((n, i) => n === correct[i])) {
+        setResult('🎉 Good job!');
+      } else {
+        setResult(null);
+      }
+    }, 200);
   }
   function onDragEnd() {
     setDraggedIdx(null);
   }
-  function checkOrder() {
-    const correct = [...numbers].sort((a, b) => mode === 'asc' ? a - b : b - a);
-    if (numbers.every((n, i) => n === correct[i])) {
-      setResult('🎉 Correct! Great job!');
-    } else {
-      setResult('❌ Try again!');
-    }
-  }
+  // Removed manual checkOrder function
   function nextTask() {
     setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5));
     setResult(null);
@@ -38,40 +40,39 @@ function AscendingDescendingTask() {
   }
   return (
     <div className="w-full flex flex-col items-center bg-gradient-to-br from-pink-100 via-yellow-100 to-blue-100 rounded-xl p-4 shadow-md">
-      <div className="mb-2 flex items-center gap-2">
-        <span className="text-2xl text-blue-700">
-          Arrange in{' '}
-          {mode === 'asc' ? (
-            <span className="font-extrabold">Ascending</span>
-          ) : (
-            <span className="font-extrabold">Descending</span>
-          )}
-          {' '}Order
-        </span>
+      <div className="mb-2 flex flex-col items-center gap-1">
+        <span className="text-lg text-gray-700 font-bold">UKG Subjects</span>
+        {/* Removed Ascending/Descending text as per user request */}
+        <span className="text-xl text-blue-700">Arrange in {mode === 'asc' ? <span className="font-extrabold">Ascending</span> : <span className="font-extrabold">Descending</span>} Order</span>
         <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
-      <div className="flex gap-4 justify-center mb-4">
+      <div className="flex gap-4 justify-center mb-4 items-end">
         {numbers.map((num, idx) => (
-          <div
-            key={idx}
-            draggable
-            onDragStart={() => onDragStart(idx)}
-            onDragOver={e => e.preventDefault()}
-            onDrop={() => onDrop(idx)}
-            onDragEnd={onDragEnd}
-            className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200 ${draggedIdx === idx ? 'opacity-50' : ''}`}
-            style={{ minWidth: 60 }}
-          >
-            {num}
+          <div key={idx} className="flex flex-col items-center">
+            {idx === 0 && (
+              <span className="text-xs text-green-700 font-bold mb-1">
+                {mode === 'asc' ? 'Smaller' : 'Larger'}
+              </span>
+            )}
+            <div
+              draggable
+              onDragStart={() => onDragStart(idx)}
+              onDragOver={e => e.preventDefault()}
+              onDrop={() => onDrop(idx)}
+              onDragEnd={onDragEnd}
+              className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200 ${draggedIdx === idx ? 'opacity-50' : ''}`}
+              style={{ minWidth: 60 }}
+            >
+              {num}
+            </div>
+            {idx === numbers.length - 1 && (
+              <span className="text-xs text-blue-700 font-bold mt-1">
+                {mode === 'asc' ? 'Larger' : 'Smaller'}
+              </span>
+            )}
           </div>
         ))}
       </div>
-      <button
-        onClick={checkOrder}
-        className="bg-green-400 hover:bg-green-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-colors mb-2"
-      >
-        Check
-      </button>
       <button
         onClick={nextTask}
         className="bg-blue-400 hover:bg-blue-500 text-white font-bold px-6 py-2 rounded-lg shadow transition-colors mb-2"

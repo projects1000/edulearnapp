@@ -59,7 +59,13 @@ function AscendingDescendingTask() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 0,
+      },
+    }),
+    useSensor(require('@dnd-kit/core').TouchSensor, {
+      activationConstraint: {
+        delay: 0,
+        tolerance: 0,
       },
     })
   );

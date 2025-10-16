@@ -56,13 +56,15 @@ function AscendingDescendingTask() {
   const [result, setResult] = useState<string | null>(null);
 
   // dnd-kit sensors for touch and mouse
+  // Import TouchSensor at top
+  // import { TouchSensor } from "@dnd-kit/core";
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 0,
       },
     }),
-    useSensor(require('@dnd-kit/core').TouchSensor, {
+    useSensor(TouchSensor, {
       activationConstraint: {
         delay: 0,
         tolerance: 0,
@@ -156,6 +158,7 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors
 } from "@dnd-kit/core";

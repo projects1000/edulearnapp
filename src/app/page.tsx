@@ -3,64 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 
-function BeforeAfterNumberTask() {
-  const [number, setNumber] = useState(5);
-  const [answer, setAnswer] = useState("");
-  const [mode, setMode] = useState<"before" | "after">("before");
-  const [result, setResult] = useState<string | null>(null);
-
-  const correct = mode === "before" ? number - 1 : number + 1;
-
-  function checkAnswer() {
-    if (parseInt(answer) === correct) {
-      setResult("🎉 Correct! Great job!");
-    } else {
-      setResult("❌ Try again!");
-    }
-  }
-
-  function nextTask() {
-    setNumber(Math.floor(Math.random() * 89) + 10); // random 2-digit number
-    setAnswer("");
-    setResult(null);
-    setMode(Math.random() > 0.5 ? "before" : "after");
-  }
-
-  return (
-    <div className="w-full flex flex-col items-center bg-white rounded-xl p-4 shadow-md">
-      <div className="mb-2 text-lg font-bold text-yellow-700">What is the {mode} number of <span className="text-2xl text-pink-500">{number}</span>?</div>
-      <input
-        type="number"
-        value={answer}
-        onChange={e => setAnswer(e.target.value)}
-        className="border-2 border-yellow-300 rounded-lg px-3 py-2 text-xl text-center mb-2 focus:outline-none focus:ring-2 focus:ring-pink-300"
-        placeholder="Enter your answer"
-        min={0}
-        max={100}
-      />
-      <div className="flex gap-2 mb-2">
-        <button
-          onClick={checkAnswer}
-          className="bg-pink-400 text-white font-bold px-4 py-2 rounded-lg shadow hover:bg-pink-500 transition-colors"
-        >
-          Check
-        </button>
-        <button
-          onClick={nextTask}
-          className="bg-blue-400 text-white font-bold px-4 py-2 rounded-lg shadow hover:bg-blue-500 transition-colors"
-        >
-          Next
-        </button>
-      </div>
-      {result && <div className="text-xl font-semibold mt-2">{result}</div>}
-      <div className="mt-2 text-sm text-gray-500">Tip: Before number is one less, after number is one more!</div>
-    </div>
-  );
-}
+// Removed unused BeforeAfterNumberTask
 
 export default function Home() {
-  const [showUKGTasks, setShowUKGTasks] = useState(false);
-  const [activeTask, setActiveTask] = useState<string | null>(null);
+  // Removed unused showUKGTasks, setShowUKGTasks, activeTask, setActiveTask
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-100 to-yellow-100 flex flex-col items-center justify-center p-4 sm:p-8">

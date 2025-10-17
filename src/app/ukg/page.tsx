@@ -1,18 +1,32 @@
 "use client";
-import React, { useEffect } from "react";
-import { useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useMediaQuery } from 'react-responsive';
+
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors
+} from "@dnd-kit/core";
+import {
+  useSortable,
+  rectSortingStrategy,
+  arrayMove,
+  SortableContext
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 export type SortableNumberProps = {
   id: number;
-  idx: number;
   mode: 'asc' | 'desc';
   isFirst: boolean;
   isLast: boolean;
   mobileStyle?: React.CSSProperties;
 };
 
-export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: SortableNumberProps) {
+export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle }: SortableNumberProps) {
   const {
     attributes,
     listeners,
@@ -20,8 +34,7 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
     transform,
     transition,
     isDragging,
-    isOver,
-    active
+    isOver
   } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -33,7 +46,7 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
     ...(typeof mobileStyle === 'object' ? mobileStyle : {}),
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="flex flex-col items-center">
+    <div ref={setNodeRef} style={style} className="flex flex-col items-center">
       {isFirst && (
         <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
           {mode === 'asc' ? 'Smaller' : 'Larger'}
@@ -43,8 +56,8 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
       <button
         className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 border-yellow-400 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400`}
         style={{ width: '100%', fontSize: '2rem', touchAction: 'none', WebkitUserSelect: 'none' }}
-        tabIndex={0}
         aria-label={`Drag number ${id}`}
+        {...attributes}
         {...listeners}
       >
         {id}
@@ -61,7 +74,7 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
 // Ascending/Descending Task
 function AscendingDescendingTask() {
   const [mode, setMode] = useState<'asc' | 'desc'>('asc');
-  const [numbers, setNumbers] = useState(() => {
+  const [numbers, setNumbers] = useState<number[]>(() => {
     const arr = Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10);
     return arr.sort(() => Math.random() - 0.5);
   });
@@ -78,14 +91,14 @@ function AscendingDescendingTask() {
   );
 
   // Prevent page scrolling while dragging on touch devices
-  let touchMoveHandler: any = null;
+  let touchMoveHandler: ((e: TouchEvent) => void) | null = null;
   function disablePageScroll() {
     try {
       document.documentElement.style.touchAction = 'none';
       document.body.style.overflow = 'hidden';
       touchMoveHandler = (e: TouchEvent) => e.preventDefault();
       document.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    } catch (e) {
+    } catch {
       // ignore when document not available
     }
   }
@@ -97,12 +110,12 @@ function AscendingDescendingTask() {
         document.removeEventListener('touchmove', touchMoveHandler as EventListener);
         touchMoveHandler = null;
       }
-    } catch (e) {
+    } catch {
       // ignore when document not available
     }
   }
 
-  function handleDragStart(event: import("@dnd-kit/core").DragStartEvent) {
+  function handleDragStart() {
     // disable page scroll when a drag begins (especially for touch/tablet)
     disablePageScroll();
   }
@@ -147,14 +160,13 @@ function AscendingDescendingTask() {
         <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
       <div className="w-full mb-4">
-  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <SortableContext items={numbers} strategy={rectSortingStrategy}>
             <div className="flex flex-col gap-4 justify-center items-center w-full">
               {numbers.map((num, idx) => (
                 <SortableNumber
                   key={num}
                   id={num}
-                  idx={idx}
                   mode={mode}
                   isFirst={idx === 0}
                   isLast={idx === numbers.length - 1}
@@ -187,23 +199,7 @@ function AscendingDescendingTask() {
     </div>
   );
 }
-import { useState } from "react";
-import Link from "next/link";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  // useSortable, (removed duplicate)
-  verticalListSortingStrategy
-} from "@dnd-kit/sortable";
-// import { CSS } from "@dnd-kit/utilities"; (removed duplicate)
+// (duplicate imports removed - core imports are declared at the top of the file)
 
 // Number spelling data
 const numberSpellings: { [key: number]: string } = {
@@ -496,7 +492,7 @@ function UKGPage() {
               className={`w-full bg-blue-200 hover:bg-blue-300 text-blue-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
               onClick={() => setActiveTask("numberSpelling")}
             >
-              Write 1 to 100
+              Learn 1 to 100
             </button>
             <div className="w-full mt-6">
               {activeTask === "numberSpelling" && <EnglishNumberSpellingTask />}

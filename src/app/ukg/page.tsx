@@ -165,8 +165,8 @@ function AscendingDescendingTask() {
       <div className="mb-2 flex flex-col items-center gap-1">
         <span className="text-lg text-gray-700 font-bold">UKG Subjects</span>
         {/* Removed Ascending/Descending text as per user request */}
-        <span className="text-xl text-blue-700">Arrange in {mode === 'asc' ? <span className="font-extrabold">Ascending</span> : <span className="font-extrabold">Descending</span>} Order</span>
-        <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
+  <span className="text-xl text-blue-700">Arrange in <span className="text-2xl sm:text-3xl font-extrabold">{mode === 'asc' ? 'Ascending' : 'Descending'}</span> Order</span>
+  <span className="text-3xl sm:text-4xl font-extrabold">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
       <div className="w-full mb-4">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>

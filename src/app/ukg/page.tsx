@@ -119,7 +119,7 @@ function SubtractionTask() {
 
   function DraggableChoice({ id, value }: { id: string; value: number }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id, data: { value } });
-    const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), zIndex: isDragging ? 20 : 1 };
+    const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), zIndex: isDragging ? 20 : 1, touchAction: 'none', WebkitUserSelect: 'none' };
     return (
       <button ref={setNodeRef} style={style} {...attributes} {...listeners}
         className="bg-white border-2 border-gray-200 rounded-full px-6 py-3 text-xl font-bold shadow cursor-grab">
@@ -147,10 +147,31 @@ function SubtractionTask() {
     }
   }
 
+  // Prevent page scroll while dragging on touch devices for subtraction task
+  let touchMoveHandlerSub: ((e: TouchEvent) => void) | null = null;
+  function disablePageScrollSub() {
+    try {
+      document.documentElement.style.touchAction = 'none';
+      document.body.style.overflow = 'hidden';
+      touchMoveHandlerSub = (e: TouchEvent) => e.preventDefault();
+      document.addEventListener('touchmove', touchMoveHandlerSub, { passive: false });
+    } catch {}
+  }
+  function enablePageScrollSub() {
+    try {
+      document.documentElement.style.touchAction = '';
+      document.body.style.overflow = '';
+      if (touchMoveHandlerSub) { document.removeEventListener('touchmove', touchMoveHandlerSub as EventListener); touchMoveHandlerSub = null; }
+    } catch {}
+  }
+
+  function handleDragStartSub() { disablePageScrollSub(); }
+  function handleDragCancelSub() { enablePageScrollSub(); }
+
   return (
     <div className="w-full flex flex-col items-center bg-gradient-to-br from-indigo-50 via-yellow-50 to-pink-50 rounded-xl p-4 shadow-md">
       <h2 className="text-xl font-bold text-indigo-700 mb-2">Subtraction</h2>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStartSub} onDragCancel={handleDragCancelSub}>
         <div className="flex flex-col lg:flex-row items-center gap-6">
           <div className="flex flex-col items-center gap-2">
             <div className="flex gap-2 items-center">
@@ -666,10 +687,31 @@ function AdditionTask() {
     }
   }
 
+  // Prevent page scroll while dragging on touch devices
+  let touchMoveHandlerAdd: ((e: TouchEvent) => void) | null = null;
+  function disablePageScrollAdd() {
+    try {
+      document.documentElement.style.touchAction = 'none';
+      document.body.style.overflow = 'hidden';
+      touchMoveHandlerAdd = (e: TouchEvent) => e.preventDefault();
+      document.addEventListener('touchmove', touchMoveHandlerAdd, { passive: false });
+    } catch {}
+  }
+  function enablePageScrollAdd() {
+    try {
+      document.documentElement.style.touchAction = '';
+      document.body.style.overflow = '';
+      if (touchMoveHandlerAdd) { document.removeEventListener('touchmove', touchMoveHandlerAdd as EventListener); touchMoveHandlerAdd = null; }
+    } catch {}
+  }
+
+  function handleDragStartAdd() { disablePageScrollAdd(); }
+  function handleDragCancelAdd() { enablePageScrollAdd(); }
+
   return (
     <div className="w-full flex flex-col items-center bg-gradient-to-br from-green-50 via-yellow-50 to-pink-50 rounded-xl p-4 shadow-md">
       <h2 className="text-xl font-bold text-green-700 mb-2">Addition</h2>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStartAdd} onDragCancel={handleDragCancelAdd}>
         <div className="flex flex-col lg:flex-row items-center gap-6">
           <div className="flex flex-col items-center gap-2">
           <div className="flex gap-2 items-center">

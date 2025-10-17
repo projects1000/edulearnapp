@@ -453,7 +453,7 @@ function FindMyNumberTask() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     return arr;
   });
-  const [rightWords, setRightWords] = useState<string[]>(() => shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
+  const [rightItems, setRightItems] = useState<Array<{ id: string; word: string }>>(() => shuffleArray(leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
   const [matched, setMatched] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<string | null>(null);
 
@@ -485,13 +485,14 @@ function FindMyNumberTask() {
   }
 
   useEffect(() => {
-    setRightWords(shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
-  }, []);
+    // whenever leftNumbers changes, rebuild rightItems (with stable ids) and shuffle
+    setRightItems(shuffleArray(leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
+  }, [leftNumbers]);
 
   function reset() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     setLeftNumbers(arr);
-    setRightWords(shuffleArray(arr.map(n => numberSpellings[n] || n.toString())));
+    setRightItems(shuffleArray(arr.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
     setMatched({});
     setResult(null);
   }
@@ -501,14 +502,18 @@ function FindMyNumberTask() {
 
   function handleDrop(activeId: string, overId: string | null) {
     if (!overId) return;
+    // activeId is like 'r-2'
+    const item = rightItems.find(it => it.id === activeId);
+    if (!item) return;
+    const word = item.word;
     const targetNumber = Number(overId);
     const correctWord = numberSpellings[targetNumber] || targetNumber.toString();
-    if (activeId === correctWord) {
+    if (word === correctWord) {
       setMatched(prev => ({ ...prev, [targetNumber]: true }));
-      setRightWords(prev => prev.filter(w => w !== activeId));
+      setRightItems(prev => prev.filter(it => it.id !== activeId));
       setTimeout(() => {
         setMatched(current => {
-          const allMatched = leftNumbers.every(n => current[n] || false);
+          const allMatched = leftNumbers.every((_, idx) => Boolean(current[leftNumbers[idx]]));
           if (allMatched) { setResult('🎉 Good job!'); setTimeout(() => setResult(null), 2000); }
           return current;
         });
@@ -554,8 +559,8 @@ function FindMyNumberTask() {
           <div className="flex flex-col gap-3 w-1/2">
             {leftNumbers.map(num => (<NumberTile key={num} num={num} />))}
           </div>
-          <div className="flex flex-col gap-3 w-1/2">
-            {rightWords.map(word => (<DraggableWordDnd key={word} id={word} word={word} />))}
+            <div className="flex flex-col gap-3 w-1/2">
+            {rightItems.map(item => (<DraggableWordDnd key={item.id} id={item.id} word={item.word} />))}
           </div>
         </div>
       </DndContext>

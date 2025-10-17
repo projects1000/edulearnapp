@@ -38,7 +38,7 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
         <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
           {mode === 'asc' ? 'Smaller' : 'Larger'}
         </span>
-        
+
       )}
       <button
         className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 border-yellow-400 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400`}
@@ -229,7 +229,7 @@ function EnglishNumberSpellingTask() {
 
   return (
     <div className="w-full flex flex-col items-center bg-white rounded-xl p-4 shadow-md">
-      <h2 className="text-xl font-bold text-blue-700 mb-2">Write 1 to 100</h2>
+      <h2 className="text-xl font-bold text-blue-700 mb-2">Learn 1 to 100</h2>
       <div className="flex w-full gap-8">
         {/* Number list with spelling beside */}
         <div className="flex flex-col gap-2 items-end">

@@ -75,6 +75,129 @@ export function SortableNumber({ id, value, mode, isFirst, isLast, mobileStyle, 
   );
 }
 
+// Subtraction Task - visual a balls - b balls = ? with draggable choices
+function SubtractionTask() {
+  const [a, setA] = useState(() => Math.floor(Math.random() * 5) + 2); // 2..6
+  const [b, setB] = useState(() => Math.floor(Math.random() * (Math.min(4, a - 1))) + 1); // ensure b < a
+  const correct = Math.max(0, a - b);
+  const [choices, setChoices] = useState<number[]>(() => {
+    const base = [correct, correct + 1, Math.max(0, correct - 1)].sort(() => Math.random() - 0.5);
+    return base;
+  });
+  const [result, setResult] = useState<string | null>(null);
+  const [matched, setMatched] = useState(false);
+  const resetTimerRef = useRef<number | null>(null);
+
+  const isTabletOrMobile = useMediaQuery({ maxWidth: 1024 });
+  const sensors = useSensors(useSensor(isTabletOrMobile ? TouchSensor : PointerSensor, { activationConstraint: isTabletOrMobile ? { delay: 0, tolerance: 0 } : { distance: 0 } }));
+
+  useEffect(() => {
+    return () => { if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; } };
+  }, []);
+
+  function resetTask() {
+    if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+    const na = Math.floor(Math.random() * 5) + 2;
+    const nb = Math.floor(Math.random() * (na - 1)) + 1;
+    setA(na); setB(nb);
+    const c = Math.max(0, na - nb);
+    const cand = [c, c + (Math.random() > 0.5 ? 1 : -1), Math.max(0, c + (Math.random() > 0.5 ? 2 : -2))];
+    setChoices(cand.sort(() => Math.random() - 0.5));
+    setResult(null); setMatched(false);
+  }
+
+  function onDropChoice(choice: number) {
+    if (matched) return;
+    if (choice === correct) {
+      setResult('🎉 Correct!'); setMatched(true);
+      if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+      resetTimerRef.current = window.setTimeout(() => { resetTask(); resetTimerRef.current = null; }, 2000) as unknown as number;
+    } else {
+      setResult('❌ Try again!');
+    }
+  }
+
+  function DraggableChoice({ id, value }: { id: string; value: number }) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id, data: { value } });
+    const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), zIndex: isDragging ? 20 : 1 };
+    return (
+      <button ref={setNodeRef} style={style} {...attributes} {...listeners}
+        className="bg-white border-2 border-gray-200 rounded-full px-6 py-3 text-xl font-bold shadow cursor-grab">
+        {value}
+      </button>
+    );
+  }
+
+  function DropBox({ onDrop }: { onDrop: (val: number) => void }) {
+    const { isOver, setNodeRef } = useDroppable({ id: 'sub-drop' });
+    return (
+      <div ref={setNodeRef} className={`w-40 h-28 rounded-lg border-4 border-dashed flex items-center justify-center ${isOver ? 'bg-green-100 border-green-400' : 'bg-white border-gray-300'}`}>
+        <div className="text-2xl font-extrabold">Drop answer here</div>
+      </div>
+    );
+  }
+
+  function handleDragEnd(event: import("@dnd-kit/core").DragEndEvent) {
+    const { active, over } = event;
+    if (over && String(over.id) === 'sub-drop') {
+      const dataVal = active.data?.current?.value;
+      const fallback = parseInt(String(active.id).replace(/^choice-/, ''), 10);
+      const finalVal = typeof dataVal === 'number' && !isNaN(dataVal) ? dataVal : (isNaN(fallback) ? NaN : fallback);
+      if (!isNaN(finalVal)) onDropChoice(finalVal);
+    }
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center bg-gradient-to-br from-indigo-50 via-yellow-50 to-pink-50 rounded-xl p-4 shadow-md">
+      <h2 className="text-xl font-bold text-indigo-700 mb-2">Subtraction</h2>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <div className="flex flex-col lg:flex-row items-center gap-6">
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center">
+                {Array.from({ length: a }).map((_, i) => (
+                  <div key={`sa-${i}`} className="w-8 h-8 bg-purple-400 rounded-full shadow" />
+                ))}
+              </div>
+              <div className="text-2xl font-extrabold">-</div>
+              <div className="flex gap-2 items-center">
+                {Array.from({ length: b }).map((_, i) => (
+                  <div key={`sb-${i}`} className="w-8 h-8 bg-yellow-400 rounded-full shadow" />
+                ))}
+              </div>
+              <div className="text-2xl font-extrabold">=</div>
+              <div><DropBox onDrop={onDropChoice} /></div>
+            </div>
+            <div className="text-sm text-gray-600 mt-2">Drag the correct number into the box</div>
+          </div>
+          <div className="flex gap-4 flex-wrap justify-center">
+            {choices.map((c, i) => (
+              <div key={`choice-${i}`} className="p-1">
+                <DraggableChoice id={`choice-${c}`} value={c} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </DndContext>
+      {result && result.startsWith('🎉') && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white bg-opacity-90 rounded-2xl shadow-2xl p-8 flex flex-col items-center animate-bounce">
+            <span className="text-6xl">🎉</span>
+            <span className="text-3xl font-extrabold text-green-600 mb-2">Congratulations!</span>
+            <span className="text-xl text-yellow-700">You answered correctly!</span>
+          </div>
+        </div>
+      )}
+      {result && !result.startsWith('🎉') && (
+        <div className="text-xl font-semibold mt-2 text-red-600">{result}</div>
+      )}
+      <div className="mt-4">
+        <button onClick={resetTask} className="px-4 py-2 bg-indigo-400 hover:bg-indigo-500 text-white rounded">Next</button>
+      </div>
+    </div>
+  );
+}
+
 // Ascending/Descending Task
 // helper to produce `count` unique random integers between min and max inclusive
 function uniqueRandomIntegers(count: number, min: number, max: number) {
@@ -455,6 +578,148 @@ function BeforeAfterNumberTask() {
   );
 }
 
+// Addition Task - visual balls + box and draggable choices
+function AdditionTask() {
+  const [a, setA] = useState(() => Math.floor(Math.random() * 4) + 1); // 1..4
+  const [b, setB] = useState(() => Math.floor(Math.random() * 4) + 1); // 1..4
+  const correct = a + b;
+  const [choices, setChoices] = useState<number[]>(() => {
+    const base = [correct, correct + 1, Math.max(0, correct - 1)].sort(() => Math.random() - 0.5);
+    if (!base.includes(correct)) base[0] = correct;
+    return base;
+  });
+  const [result, setResult] = useState<string | null>(null);
+  const [matched, setMatched] = useState<boolean>(false);
+  const resetTimerRef = useRef<number | null>(null);
+
+  // sensors like other tasks
+  const isTabletOrMobile = useMediaQuery({ maxWidth: 1024 });
+  const sensors = useSensors(
+    useSensor(isTabletOrMobile ? TouchSensor : PointerSensor, {
+      activationConstraint: isTabletOrMobile ? { delay: 0, tolerance: 0 } : { distance: 0 }
+    })
+  );
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+    };
+  }, []);
+
+  function resetTask() {
+    if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+    const na = Math.floor(Math.random() * 4) + 1;
+    const nb = Math.floor(Math.random() * 4) + 1;
+    setA(na); setB(nb);
+    const c = na + nb;
+    const cand = [c, c + (Math.random() > 0.5 ? 1 : -1), c + (Math.random() > 0.5 ? 2 : -2)];
+    setChoices(cand.sort(() => Math.random() - 0.5));
+    setResult(null); setMatched(false);
+  }
+
+  function onDropChoice(choice: number) {
+    if (matched) return;
+    if (choice === correct) {
+      setResult('🎉 Correct!');
+      setMatched(true);
+      // schedule reset after 2s
+      if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+      resetTimerRef.current = window.setTimeout(() => {
+        resetTask();
+        resetTimerRef.current = null;
+      }, 2000) as unknown as number;
+    } else {
+      setResult('❌ Try again!');
+    }
+  }
+
+  // simple draggable choice component (no sortable) using dnd-kit
+  function DraggableChoice({ id, value }: { id: string; value: number }) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id, data: { value } });
+    const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), zIndex: isDragging ? 20 : 1 };
+    return (
+      <button ref={setNodeRef} style={style} {...attributes} {...listeners}
+        className="bg-white border-2 border-gray-200 rounded-full px-6 py-3 text-xl font-bold shadow cursor-grab">
+        {value}
+      </button>
+    );
+  }
+
+  // droppable box
+  function DropBox({ onDrop }: { onDrop: (val: number) => void }) {
+    const { isOver, setNodeRef } = useDroppable({ id: 'add-drop' });
+    return (
+      <div ref={setNodeRef} className={`w-40 h-28 rounded-lg border-4 border-dashed flex items-center justify-center ${isOver ? 'bg-green-100 border-green-400' : 'bg-white border-gray-300'}`}>
+        <div className="text-2xl font-extrabold">Drop answer here</div>
+      </div>
+    );
+  }
+
+  // Handle drops: read value from draggable data or parse id fallback
+  function handleDragEnd(event: import("@dnd-kit/core").DragEndEvent) {
+    const { active, over } = event;
+    if (over && String(over.id) === 'add-drop') {
+      const dataVal = active.data?.current?.value;
+      const fallback = parseInt(String(active.id).replace(/^choice-/, ''), 10);
+      const finalVal = typeof dataVal === 'number' && !isNaN(dataVal) ? dataVal : (isNaN(fallback) ? NaN : fallback);
+      if (!isNaN(finalVal)) onDropChoice(finalVal);
+    }
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center bg-gradient-to-br from-green-50 via-yellow-50 to-pink-50 rounded-xl p-4 shadow-md">
+      <h2 className="text-xl font-bold text-green-700 mb-2">Addition</h2>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <div className="flex flex-col lg:flex-row items-center gap-6">
+          <div className="flex flex-col items-center gap-2">
+          <div className="flex gap-2 items-center">
+            {/* Render a balls visualization for `a` */}
+            <div className="flex gap-2 items-center">
+              {Array.from({ length: a }).map((_, i) => (
+                <div key={`a-${i}`} className="w-8 h-8 bg-red-400 rounded-full shadow" />
+              ))}
+            </div>
+            <div className="text-2xl font-extrabold">+</div>
+            <div className="flex gap-2 items-center">
+              {Array.from({ length: b }).map((_, i) => (
+                <div key={`b-${i}`} className="w-8 h-8 bg-blue-400 rounded-full shadow" />
+              ))}
+            </div>
+            <div className="text-2xl font-extrabold">=</div>
+            <div>
+              <DropBox onDrop={onDropChoice} />
+            </div>
+          </div>
+          <div className="text-sm text-gray-600 mt-2">Drag the correct number into the box</div>
+        </div>
+            <div className="flex gap-4 flex-wrap justify-center">
+              {choices.map((c, i) => (
+                <div key={`choice-${i}`} className="p-1">
+                  <DraggableChoice id={`choice-${c}`} value={c} />
+                </div>
+              ))}
+            </div>
+        </div>
+      </DndContext>
+      {result && result.startsWith('🎉') && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white bg-opacity-90 rounded-2xl shadow-2xl p-8 flex flex-col items-center animate-bounce">
+            <span className="text-6xl">🎉</span>
+            <span className="text-3xl font-extrabold text-green-600 mb-2">Congratulations!</span>
+            <span className="text-xl text-yellow-700">You answered correctly!</span>
+          </div>
+        </div>
+      )}
+      {result && !result.startsWith('🎉') && (
+        <div className="text-xl font-semibold mt-2 text-red-600">{result}</div>
+      )}
+      <div className="mt-4">
+        <button onClick={resetTask} className="px-4 py-2 bg-green-400 hover:bg-green-500 text-white rounded">Next</button>
+      </div>
+    </div>
+  );
+}
+
 // Find My Number Task
 function ArrowDraggable({ running = true }: { running?: boolean }) {
   // Auto-oscillating arrow: moves left and right continuously to indicate dragging direction.
@@ -715,12 +980,26 @@ function UKGPage() {
                 >
                   Find My Number
                 </button>
+                <button
+                  className={`w-full bg-green-200 hover:bg-green-300 text-green-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
+                  onClick={() => setActiveTask("addition")}
+                >
+                  Addition (Drag answer)
+                </button>
+                <button
+                  className={`w-full bg-indigo-200 hover:bg-indigo-300 text-indigo-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
+                  onClick={() => setActiveTask("subtraction")}
+                >
+                  Subtraction (Drag answer)
+                </button>
               </>
             )}
             <div className="w-full mt-2 lg:mt-0">
               {activeTask === "beforeAfter" && <BeforeAfterNumberTask />}
               {activeTask === "ascdesc" && <AscendingDescendingTask />}
               {activeTask === "findNumber" && <FindMyNumberTask />}
+              {activeTask === "addition" && <AdditionTask />}
+              {activeTask === "subtraction" && <SubtractionTask />}
             </div>
             <button
               className="mt-2 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold"

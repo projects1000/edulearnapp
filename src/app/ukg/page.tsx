@@ -8,6 +8,8 @@ import {
   closestCenter,
   PointerSensor,
   TouchSensor,
+  useDraggable,
+  useDroppable,
   useSensor,
   useSensors
 } from "@dnd-kit/core";
@@ -448,43 +450,27 @@ function FindMyNumberTask() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     return arr;
   });
-  const [rightWords, setRightWords] = useState<string[]>(() => {
-    // original words (unshuffled) derived from leftNumbers
-    return leftNumbers.map(n => numberSpellings[n] || n.toString());
-  });
-  // displayedRightWords keeps a shuffled but stable order for rendering so words are disordered
-  const [displayedRightWords, setDisplayedRightWords] = useState<Array<string | null>>(() => {
-    return shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString()));
-  });
+  const [rightWords, setRightWords] = useState<string[]>(() => shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
   const [matched, setMatched] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<string | null>(null);
 
-  // simple shuffle helper
-  function shuffleArray<T>(arr: T[]) {
-    return [...arr].sort(() => Math.random() - 0.5);
-  }
+  // helper
+  function shuffleArray<T>(arr: T[]) { return [...arr].sort(() => Math.random() - 0.5); }
 
-  useEffect(() => {
-    // regenerate words when the task mounts or when leftNumbers changes
-    const words = leftNumbers.map(n => numberSpellings[n] || n.toString());
-    setRightWords(words);
-    setDisplayedRightWords(shuffleArray(words));
-    setMatched({});
-  }, []); // run once
+  const isTabletOrMobile = useMediaQuery({ maxWidth: 1024 });
+  const sensors = useSensors(useSensor(isTabletOrMobile ? TouchSensor : PointerSensor, { activationConstraint: { distance: 0 } }));
 
-  // touch/drag helpers to prevent page scroll during native drag on touch devices
+  // page scroll prevention while dragging
   let touchMoveHandler: ((e: TouchEvent) => void) | null = null;
-  function disablePageScrollForNativeDrag() {
+  function disablePageScroll() {
     try {
       document.documentElement.style.touchAction = 'none';
       document.body.style.overflow = 'hidden';
       touchMoveHandler = (e: TouchEvent) => e.preventDefault();
       document.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    } catch {
-      // ignore if document not available
-    }
+    } catch {}
   }
-  function enablePageScrollForNativeDrag() {
+  function enablePageScroll() {
     try {
       document.documentElement.style.touchAction = '';
       document.body.style.overflow = '';
@@ -492,47 +478,62 @@ function FindMyNumberTask() {
         document.removeEventListener('touchmove', touchMoveHandler as EventListener);
         touchMoveHandler = null;
       }
-    } catch {
-      // ignore if document not available
-    }
+    } catch {}
   }
 
-  // DnD handlers - simple matching by content
-  function handleDrop(word: string, targetNumber: number) {
+  useEffect(() => {
+    setRightWords(shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
+  }, []);
+
+  function reset() {
+    const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
+    setLeftNumbers(arr);
+    setRightWords(shuffleArray(arr.map(n => numberSpellings[n] || n.toString())));
+    setMatched({});
+    setResult(null);
+  }
+
+  function handleDragStart() { disablePageScroll(); }
+  function handleDragEnd() { enablePageScroll(); }
+
+  function handleDrop(activeId: string, overId: string | null) {
+    if (!overId) return;
+    const targetNumber = Number(overId);
     const correctWord = numberSpellings[targetNumber] || targetNumber.toString();
-    if (word === correctWord) {
+    if (activeId === correctWord) {
       setMatched(prev => ({ ...prev, [targetNumber]: true }));
-      // remove the matched word from displayedRightWords (replace with null so layout stays aligned)
-      setDisplayedRightWords(prev => {
-        const i = prev.findIndex(w => w === word);
-        if (i === -1) return prev;
-        const copy = [...prev];
-        copy[i] = null;
-        return copy;
-      });
-      // Check for completion after a short delay to allow state to update
+      setRightWords(prev => prev.filter(w => w !== activeId));
       setTimeout(() => {
         setMatched(current => {
-          const allMatched = leftNumbers.every(n => current[n] || (n === targetNumber));
-          // If all matched, show success
-          if (allMatched) {
-            setResult('🎉 Good job!');
-            setTimeout(() => setResult(null), 2000);
-          }
+          const allMatched = leftNumbers.every(n => current[n] || false);
+          if (allMatched) { setResult('🎉 Good job!'); setTimeout(() => setResult(null), 2000); }
           return current;
         });
       }, 50);
     }
   }
 
-  function reset() {
-    const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
-    setLeftNumbers(arr);
-    const words = arr.map(n => numberSpellings[n] || n.toString());
-    setRightWords(words);
-    setDisplayedRightWords(shuffleArray(words));
-    setMatched({});
-    setResult(null);
+  // draggable word using dnd-kit
+  function DraggableWordDnd({ id, word }: { id: string; word: string }) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+    const style: React.CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      opacity: isDragging ? 0.6 : 1,
+    };
+    return (
+      <div ref={setNodeRef} {...listeners} {...attributes} style={style} className="h-16 w-full flex items-center justify-center p-2 rounded-lg bg-red-600 text-white border-2 border-red-400 cursor-grab">
+        <div className="text-lg font-bold text-center w-full">{word}</div>
+      </div>
+    );
+  }
+
+  function NumberTile({ num }: { num: number }) {
+    const { setNodeRef, isOver } = useDroppable({ id: String(num) });
+    return (
+      <div ref={setNodeRef} className={`h-16 flex items-center justify-center p-3 rounded-lg border-2 ${matched[num] ? 'bg-green-600 text-white border-green-500' : 'bg-red-600 text-white border-red-400'} ${isOver ? 'ring-4 ring-sky-300' : ''}`}>
+        <div className="text-xl font-extrabold">{num}</div>
+      </div>
+    );
   }
 
   return (
@@ -544,36 +545,22 @@ function FindMyNumberTask() {
           <ArrowDraggable running={!Boolean(result)} />
         </div>
       </div>
-      <div className="flex w-full gap-6">
-        <div className="flex flex-col gap-3 w-1/2">
-          {leftNumbers.map((num) => (
-            <div
-              key={num}
-              className={`h-16 flex items-center justify-center p-3 rounded-lg border-2 ${matched[num] ? 'bg-green-600 text-white border-green-500' : 'bg-red-600 text-white border-red-400'}`}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const word = e.dataTransfer.getData('text/plain');
-                if (word) handleDrop(word, num);
-              }}
-            >
-              <div className="text-xl font-extrabold">{num}</div>
-            </div>
-          ))}
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={(e) => { handleDragEnd(); const activeId = String(e.active.id); const overId = e.over?.id ? String(e.over.id) : null; handleDrop(activeId, overId); }} onDragCancel={handleDragEnd}>
+        <div className="flex w-full gap-6">
+          <div className="flex flex-col gap-3 w-1/2">
+            {leftNumbers.map(num => (<NumberTile key={num} num={num} />))}
+          </div>
+          <div className="flex flex-col gap-3 w-1/2">
+            {rightWords.map(word => (<DraggableWordDnd key={word} id={word} word={word} />))}
+          </div>
         </div>
-        <div className="flex flex-col gap-3 w-1/2">
-          {displayedRightWords.map((word, idx) => (
-            word ? (
-              <DraggableWord key={idx} word={word} onDropOnNumber={handleDrop} onDragStartNative={disablePageScrollForNativeDrag} onDragEndNative={enablePageScrollForNativeDrag} />
-            ) : (
-              <div key={idx} className="h-16 w-full" />
-            )
-          ))}
-        </div>
-      </div>
+      </DndContext>
+
       <div className="flex gap-4 mt-4">
         <button className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 py-2 rounded-lg" onClick={reset}>Reset</button>
       </div>
+
       {result && result.startsWith('🎉') && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-white bg-opacity-90 rounded-2xl shadow-2xl p-8 flex flex-col items-center animate-bounce">

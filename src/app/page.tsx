@@ -36,61 +36,84 @@ export default function Home() {
     };
   }, []);
 
-  async function handleInstallClick() {
-    if (!deferredPrompt) return;
-    try {
-      // show the install prompt
-      await deferredPrompt.prompt();
-      const choice = deferredPrompt.userChoice ? await deferredPrompt.userChoice : null;
-      if (choice && choice.outcome === 'accepted') {
-        try { localStorage.setItem('edulearn_installed', '1'); } catch {}
-        setIsInstalled(true);
-      }
-      setDeferredPrompt(null);
-    } catch {
-      // ignore
-    }
-  }
-
-  // show a short helper message when prompt not available
+  // We'll auto-prompt on first visit when beforeinstallprompt fires (Android). For iOS, show a small helper UI.
   const [showInstallHelp, setShowInstallHelp] = useState(false);
-  const helpTimerRef = useRef<number | null>(null);
+  const firstPromptFlag = 'pwa_first_visit_shown';
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
-  function handleInstallIconClick() {
-    if (isInstalled) return; // already installed
-    if (deferredPrompt) {
-      handleInstallClick();
-      return;
+  function isiOS() {
+    try {
+      return /iphone|ipad|ipod/i.test(navigator.userAgent) && !('standalone' in navigator && (navigator as any).standalone);
+    } catch {
+      return false;
     }
-    // show fallback helper (e.g. "Use browser menu → Add to Home screen")
-    setShowInstallHelp(true);
-    if (helpTimerRef.current) { clearTimeout(helpTimerRef.current); helpTimerRef.current = null; }
-    helpTimerRef.current = window.setTimeout(() => { setShowInstallHelp(false); helpTimerRef.current = null; }, 3500) as unknown as number;
   }
 
   useEffect(() => {
+    let helpTimer: number | null = null;
+    const onBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+      try { e.preventDefault(); } catch {}
+      deferredPromptRef.current = e;
+      const firstShown = localStorage.getItem(firstPromptFlag) === '1';
+      const installed = localStorage.getItem('edulearn_installed') === '1';
+      if (!firstShown && !installed) {
+        // small delay so it doesn't interrupt initial rendering
+        setTimeout(async () => {
+          try {
+            await e.prompt();
+            const choice = e.userChoice ? await e.userChoice : null;
+            if (choice && choice.outcome === 'accepted') {
+              try { localStorage.setItem('edulearn_installed', '1'); } catch {}
+              setIsInstalled(true);
+            }
+          } catch {
+            // ignore prompt errors
+          } finally {
+            try { localStorage.setItem(firstPromptFlag, '1'); } catch {}
+          }
+        }, 600);
+      }
+    };
+
+    const onAppInstalled = () => {
+      try { localStorage.setItem('edulearn_installed', '1'); } catch {}
+      setIsInstalled(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
+    window.addEventListener('appinstalled', onAppInstalled as EventListener);
+
+    // iOS fallback: show helper once for first-time visitors
+    try {
+      const firstShown = localStorage.getItem(firstPromptFlag) === '1';
+      const installed = localStorage.getItem('edulearn_installed') === '1';
+      if (isiOS() && !firstShown && !installed) {
+        setShowInstallHelp(true);
+        try { localStorage.setItem(firstPromptFlag, '1'); } catch {}
+        helpTimer = window.setTimeout(() => setShowInstallHelp(false), 3500) as unknown as number;
+      }
+    } catch {}
+
     return () => {
-      if (helpTimerRef.current) { clearTimeout(helpTimerRef.current); helpTimerRef.current = null; }
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
+      window.removeEventListener('appinstalled', onAppInstalled as EventListener);
+      if (helpTimer) { clearTimeout(helpTimer); helpTimer = null; }
     };
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-100 to-yellow-100 flex flex-col items-center justify-center p-4 sm:p-8">
+      {showInstallHelp && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-lg shadow-lg p-3 text-center max-w-xs">
+          <div className="font-semibold">Install on iPhone</div>
+          <div className="text-sm mt-1">Tap the Share button, then "Add to Home Screen".</div>
+          <button className="mt-2 text-xs text-blue-600" onClick={() => setShowInstallHelp(false)}>Got it</button>
+        </div>
+      )}
       <header className="w-full max-w-2xl text-center mb-8 relative">
   <h1 className="text-4xl sm:text-5xl font-extrabold text-pink-600 mb-2 drop-shadow-lg">EduLearn Play Factory</h1>
         <p className="text-lg sm:text-xl text-blue-700 font-semibold">Fun Learning for Nursery, LKG, UKG</p>
-        {/* Persistent install icon - top-right */}
-        <div className="absolute top-0 right-0 mt-2 mr-2">
-          <button onClick={handleInstallIconClick} title={isInstalled ? 'Installed' : 'Install app'} className={`p-2 rounded-full shadow-lg transition-colors ${isInstalled ? 'bg-gray-200 text-gray-600' : 'bg-green-500 text-white hover:bg-green-600'}`}>
-            <span className="text-2xl">⬇️</span>
-          </button>
-        </div>
-        {showInstallHelp && (
-          <div className="absolute top-12 right-0 mr-2 bg-white rounded-lg shadow p-2 text-sm text-gray-700">
-            <div className="font-semibold">Install tip</div>
-            <div>Open your browser menu and select &quot;Add to Home screen&quot; (or &quot;Install app&quot;).</div>
-          </div>
-        )}
+        {/* iOS helper will show below when appropriate */}
       </header>
       <main className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">
         {/* Nursery Card */}
@@ -111,15 +134,7 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-gray-800 mb-2">UKG</h2>
           <p className="text-base text-gray-600 mb-4">Click to see UKG activities!</p>
         </Link>
-        {/* Install PWA button - only show when not installed and prompt available */}
-        {!isInstalled && deferredPrompt && (
-          <div className="col-span-full flex justify-center mt-4">
-            <button onClick={handleInstallClick} className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-full shadow">
-              <span className="text-2xl">⬇️</span>
-              <span>Install App</span>
-            </button>
-          </div>
-        )}
+        {/* The app will prompt automatically on first visit for supporting Android browsers. */}
       </main>
       {/* UKG Tasks Section removed, now on separate page */}
       <footer className="mt-12 text-center text-sm text-gray-500">

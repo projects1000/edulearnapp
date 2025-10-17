@@ -556,7 +556,7 @@ function FindMyNumberTask() {
       setTimeout(() => {
         setMatched(current => {
           const allMatched = leftNumbers.every((_, idx) => Boolean(current[leftNumbers[idx]]));
-          if (allMatched) { setResult('🎉 Good job!'); setTimeout(() => setResult(null), 2000); }
+          if (allMatched) { setResult('🎉 Good job!'); }
           return current;
         });
       }, 50);

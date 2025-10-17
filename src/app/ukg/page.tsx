@@ -488,9 +488,9 @@ function FindMyNumberTask() {
   }
 
   useEffect(() => {
-    // initialize right items on mount (in case leftNumbers changed)
+    // initialize right items when leftNumbers changes
     setRightItems(shuffleArray(leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
-  }, []);
+  }, [leftNumbers]);
 
   function reset() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
@@ -507,8 +507,7 @@ function FindMyNumberTask() {
   function handleDrop(activeId: string, overId: string | null) {
     if (!overId) return;
     if (!activeId.startsWith('r-') || !overId.startsWith('l-')) return;
-    const activeIndex = Number(activeId.split('-')[1]);
-    const overIndex = Number(overId.split('-')[1]);
+  const overIndex = Number(overId.split('-')[1]);
     const word = rightItems.find(it => it.id === activeId)?.word;
     if (word == null) return;
     const targetNumber = leftNumbers[overIndex];
@@ -593,21 +592,7 @@ function FindMyNumberTask() {
   );
 }
 
-function DraggableWord({ word, onDropOnNumber, onDragStartNative, onDragEndNative }: { word: string; onDropOnNumber: (w: string, n: number) => void; onDragStartNative?: () => void; onDragEndNative?: () => void }) {
-  // for simplicity, we'll implement native drag events
-  function handleDragStart(e: React.DragEvent) {
-    try { onDragStartNative && onDragStartNative(); } catch {}
-    e.dataTransfer.setData('text/plain', word);
-  }
-  function handleDragEnd(e: React.DragEvent) {
-    try { onDragEndNative && onDragEndNative(); } catch {}
-  }
-  return (
-    <div draggable className="h-16 w-full flex items-center justify-center p-2 rounded-lg bg-red-600 text-white border-2 border-red-400 cursor-grab" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="text-lg font-bold text-center w-full">{word}</div>
-    </div>
-  );
-}
+// native DraggableWord removed in favor of dnd-kit implementation
 
 function UKGPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);

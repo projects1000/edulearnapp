@@ -38,6 +38,7 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
         <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
           {mode === 'asc' ? 'Smaller' : 'Larger'}
         </span>
+        
       )}
       <button
         className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 border-yellow-400 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400`}

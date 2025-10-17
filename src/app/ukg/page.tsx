@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect } from "react";
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useMediaQuery } from 'react-responsive';
 export type SortableNumberProps = {
   id: number;
   idx: number;
@@ -18,14 +19,18 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
+    isOver,
+    active
   } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     minWidth: 60,
-    ...mobileStyle,
+    boxShadow: isOver ? '0 0 0 4px #38bdf8' : '0 2px 8px #fbbf24',
+    zIndex: isDragging ? 10 : 1,
+    ...(typeof mobileStyle === 'object' ? mobileStyle : {}),
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="flex flex-col items-center">
@@ -33,10 +38,17 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
         <span className="text-xs text-green-700 font-bold mb-1 whitespace-nowrap">
           {mode === 'asc' ? 'Smaller' : 'Larger'}
         </span>
+
       )}
-      <div className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 border-yellow-400 cursor-move transition-all duration-200`}>
+      <button
+        className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 border-yellow-400 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400`}
+        style={{ width: '100%', fontSize: '2rem' }}
+        tabIndex={0}
+        aria-label={`Drag number ${id}`}
+        {...listeners}
+      >
         {id}
-      </div>
+      </button>
       {isLast && (
         <span className="text-xs text-blue-700 font-bold mt-1 whitespace-nowrap">
           {mode === 'asc' ? 'Larger' : 'Smaller'}
@@ -55,20 +67,13 @@ function AscendingDescendingTask() {
   });
   const [result, setResult] = useState<string | null>(null);
 
-  // dnd-kit sensors for touch and mouse
-  // Import TouchSensor at top
-  // import { TouchSensor } from "@dnd-kit/core";
+  // Responsive sensor selection
+  const isTabletOrMobile = useMediaQuery({ maxWidth: 1024 });
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 0,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 0,
-        tolerance: 0,
-      },
+    useSensor(isTabletOrMobile ? TouchSensor : PointerSensor, {
+      activationConstraint: isTabletOrMobile
+        ? { delay: 0, tolerance: 0 }
+        : { distance: 0 },
     })
   );
 
@@ -92,7 +97,6 @@ function AscendingDescendingTask() {
       }
     }
   }
-  // Removed manual checkOrder function
   function nextTask() {
     setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5));
     setResult(null);
@@ -108,13 +112,8 @@ function AscendingDescendingTask() {
       </div>
       <div className="w-full mb-4">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={numbers} strategy={verticalListSortingStrategy}>
-            <div className="hidden sm:flex gap-4 justify-center items-end min-w-[340px] sm:min-w-0">
-              {numbers.map((num, idx) => (
-                <SortableNumber key={num} id={num} idx={idx} mode={mode} isFirst={idx === 0} isLast={idx === numbers.length - 1} />
-              ))}
-            </div>
-            <div className="flex sm:hidden flex-col justify-start items-center w-full gap-4 py-2">
+          <SortableContext items={numbers} strategy={rectSortingStrategy}>
+            <div className="flex flex-col gap-4 justify-center items-center w-full">
               {numbers.map((num, idx) => (
                 <SortableNumber
                   key={num}
@@ -123,7 +122,7 @@ function AscendingDescendingTask() {
                   mode={mode}
                   isFirst={idx === 0}
                   isLast={idx === numbers.length - 1}
-                  mobileStyle={{ width: '90%', minHeight: 60 }}
+                  mobileStyle={isTabletOrMobile ? { width: '90%', minHeight: 60 } : undefined}
                 />
               ))}
             </div>
@@ -230,7 +229,7 @@ function EnglishNumberSpellingTask() {
 
   return (
     <div className="w-full flex flex-col items-center bg-white rounded-xl p-4 shadow-md">
-      <h2 className="text-xl font-bold text-blue-700 mb-2">Write 1 to 100</h2>
+      <h2 className="text-xl font-bold text-blue-700 mb-2">Learn 1 to 100</h2>
       <div className="flex w-full gap-8">
         {/* Number list with spelling beside */}
         <div className="flex flex-col gap-2 items-end">
@@ -493,7 +492,7 @@ function UKGPage() {
         )}
       </main>
       <footer className="mt-12 text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} EduLearn Play School. All rights reserved.
+  &copy; {new Date().getFullYear()} EduLearn Play Factory. All rights reserved.
       </footer>
     </div>
   );

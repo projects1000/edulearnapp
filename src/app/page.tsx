@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-100 to-yellow-100 flex flex-col items-center justify-center p-4 sm:p-8">
       <header className="w-full max-w-2xl text-center mb-8">
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-pink-600 mb-2 drop-shadow-lg">EduLearn Play School</h1>
+  <h1 className="text-4xl sm:text-5xl font-extrabold text-pink-600 mb-2 drop-shadow-lg">EduLearn Play Factory</h1>
         <p className="text-lg sm:text-xl text-blue-700 font-semibold">Fun Learning for Nursery, LKG, UKG</p>
       </header>
       <main className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -36,7 +36,7 @@ export default function Home() {
       </main>
       {/* UKG Tasks Section removed, now on separate page */}
       <footer className="mt-12 text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} EduLearn Play School. All rights reserved.
+  &copy; {new Date().getFullYear()} EduLearn Play Factory. All rights reserved.
       </footer>
     </div>
   );

@@ -450,8 +450,14 @@ function FindMyNumberTask() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     return arr;
   });
-  const [rightWords, setRightWords] = useState<string[]>(() => shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
-  const [matched, setMatched] = useState<Record<number, boolean>>({});
+
+  // right items contain a stable id and the word; using index-based ids avoids collisions when words/numbers repeat
+  const [rightItems, setRightItems] = useState<Array<{ id: string; word: string }>>(() => {
+    const words = leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }));
+    return shuffleArray(words);
+  });
+
+  const [matchedByIndex, setMatchedByIndex] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<string | null>(null);
 
   // helper
@@ -482,31 +488,44 @@ function FindMyNumberTask() {
   }
 
   useEffect(() => {
-    setRightWords(shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
+    // initialize right items on mount (in case leftNumbers changed)
+    setRightItems(shuffleArray(leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
   }, []);
 
   function reset() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     setLeftNumbers(arr);
-    setRightWords(shuffleArray(arr.map(n => numberSpellings[n] || n.toString())));
-    setMatched({});
+    setRightItems(shuffleArray(arr.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
+    setMatchedByIndex({});
     setResult(null);
   }
 
   function handleDragStart() { disablePageScroll(); }
   function handleDragEnd() { enablePageScroll(); }
 
+  // activeId will be like 'r-2' and overId like 'l-3'
   function handleDrop(activeId: string, overId: string | null) {
     if (!overId) return;
-    const targetNumber = Number(overId);
+    if (!activeId.startsWith('r-') || !overId.startsWith('l-')) return;
+    const activeIndex = Number(activeId.split('-')[1]);
+    const overIndex = Number(overId.split('-')[1]);
+    const word = rightItems.find(it => it.id === activeId)?.word;
+    if (word == null) return;
+    const targetNumber = leftNumbers[overIndex];
     const correctWord = numberSpellings[targetNumber] || targetNumber.toString();
-    if (activeId === correctWord) {
-      setMatched(prev => ({ ...prev, [targetNumber]: true }));
-      setRightWords(prev => prev.filter(w => w !== activeId));
+    if (word === correctWord) {
+      // mark exact left index matched
+      setMatchedByIndex(prev => ({ ...prev, [overIndex]: true }));
+      // remove only the dragged right item (by id)
+      setRightItems(prev => prev.filter(it => it.id !== activeId));
+      // check completion based on matchedByIndex after update
       setTimeout(() => {
-        setMatched(current => {
-          const allMatched = leftNumbers.every(n => current[n] || false);
-          if (allMatched) { setResult('🎉 Good job!'); setTimeout(() => setResult(null), 2000); }
+        setMatchedByIndex(current => {
+          const allMatched = leftNumbers.every((_, idx) => Boolean(current[idx]));
+          if (allMatched) {
+            setResult('🎉 Good job!');
+            setTimeout(() => setResult(null), 2000);
+          }
           return current;
         });
       }, 50);
@@ -527,10 +546,10 @@ function FindMyNumberTask() {
     );
   }
 
-  function NumberTile({ num }: { num: number }) {
-    const { setNodeRef, isOver } = useDroppable({ id: String(num) });
+  function NumberTile({ num, index }: { num: number; index: number }) {
+    const { setNodeRef, isOver } = useDroppable({ id: `l-${index}` });
     return (
-      <div ref={setNodeRef} className={`h-16 flex items-center justify-center p-3 rounded-lg border-2 ${matched[num] ? 'bg-green-600 text-white border-green-500' : 'bg-red-600 text-white border-red-400'} ${isOver ? 'ring-4 ring-sky-300' : ''}`}>
+      <div ref={setNodeRef} className={`h-16 flex items-center justify-center p-3 rounded-lg border-2 ${matchedByIndex[index] ? 'bg-green-600 text-white border-green-500' : 'bg-red-600 text-white border-red-400'} ${isOver ? 'ring-4 ring-sky-300' : ''}`}>
         <div className="text-xl font-extrabold">{num}</div>
       </div>
     );
@@ -549,10 +568,10 @@ function FindMyNumberTask() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={(e) => { handleDragEnd(); const activeId = String(e.active.id); const overId = e.over?.id ? String(e.over.id) : null; handleDrop(activeId, overId); }} onDragCancel={handleDragEnd}>
         <div className="flex w-full gap-6">
           <div className="flex flex-col gap-3 w-1/2">
-            {leftNumbers.map(num => (<NumberTile key={num} num={num} />))}
+            {leftNumbers.map((num, idx) => (<NumberTile key={`l-${idx}`} num={num} index={idx} />))}
           </div>
           <div className="flex flex-col gap-3 w-1/2">
-            {rightWords.map(word => (<DraggableWordDnd key={word} id={word} word={word} />))}
+            {rightItems.map(item => (<DraggableWordDnd key={item.id} id={item.id} word={item.word} />))}
           </div>
         </div>
       </DndContext>

@@ -42,7 +42,7 @@ export function SortableNumber({ id, idx, mode, isFirst, isLast, mobileStyle }: 
       )}
       <button
         className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 border-yellow-400 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400`}
-        style={{ width: '100%', fontSize: '2rem' }}
+        style={{ width: '100%', fontSize: '2rem', touchAction: 'none', WebkitUserSelect: 'none' }}
         tabIndex={0}
         aria-label={`Drag number ${id}`}
         {...listeners}
@@ -77,7 +77,39 @@ function AscendingDescendingTask() {
     })
   );
 
+  // Prevent page scrolling while dragging on touch devices
+  let touchMoveHandler: any = null;
+  function disablePageScroll() {
+    try {
+      document.documentElement.style.touchAction = 'none';
+      document.body.style.overflow = 'hidden';
+      touchMoveHandler = (e: TouchEvent) => e.preventDefault();
+      document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    } catch (e) {
+      // ignore when document not available
+    }
+  }
+  function enablePageScroll() {
+    try {
+      document.documentElement.style.touchAction = '';
+      document.body.style.overflow = '';
+      if (touchMoveHandler) {
+        document.removeEventListener('touchmove', touchMoveHandler as EventListener);
+        touchMoveHandler = null;
+      }
+    } catch (e) {
+      // ignore when document not available
+    }
+  }
+
+  function handleDragStart(event: import("@dnd-kit/core").DragStartEvent) {
+    // disable page scroll when a drag begins (especially for touch/tablet)
+    disablePageScroll();
+  }
+
   function handleDragEnd(event: import("@dnd-kit/core").DragEndEvent) {
+    // re-enable page scroll when dragging ends
+    enablePageScroll();
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = numbers.findIndex(n => n === Number(active.id));
@@ -97,6 +129,10 @@ function AscendingDescendingTask() {
       }
     }
   }
+  function handleDragCancel() {
+    // re-enable page scroll when drag is cancelled
+    enablePageScroll();
+  }
   function nextTask() {
     setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5));
     setResult(null);
@@ -111,7 +147,7 @@ function AscendingDescendingTask() {
         <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
       <div className="w-full mb-4">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <SortableContext items={numbers} strategy={rectSortingStrategy}>
             <div className="flex flex-col gap-4 justify-center items-center w-full">
               {numbers.map((num, idx) => (

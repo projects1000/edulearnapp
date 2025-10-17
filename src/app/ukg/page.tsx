@@ -165,24 +165,23 @@ function AscendingDescendingTask() {
       <div className="mb-2 flex flex-col items-center gap-1">
         <span className="text-lg text-gray-700 font-bold">UKG Subjects</span>
         {/* Removed Ascending/Descending text as per user request */}
-  <span className="text-xl text-blue-700">Arrange in <span className="text-2xl sm:text-3xl font-extrabold">{mode === 'asc' ? 'Ascending' : 'Descending'}</span> Order</span>
-  <span className="text-3xl sm:text-4xl font-extrabold">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
+        <span className="text-xl text-blue-700">Arrange in {mode === 'asc' ? <span className="font-extrabold">Ascending</span> : <span className="font-extrabold">Descending</span>} Order</span>
+        <span className="text-2xl">{mode === 'asc' ? '⬆️' : '⬇️'}</span>
       </div>
       <div className="w-full mb-4">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <SortableContext items={numbers} strategy={rectSortingStrategy}>
-            <div className="flex flex-col lg:flex-row gap-4 justify-center items-center w-full flex-wrap">
+            <div className="flex flex-col gap-4 justify-center items-center w-full">
               {numbers.map((num, idx) => (
-                <div key={num} className={isTabletOrMobile ? 'w-full' : 'flex-1 px-2'}>
-                  <SortableNumber
-                    id={num}
-                    mode={mode}
-                    isFirst={idx === 0}
-                    isLast={idx === numbers.length - 1}
-                    mobileStyle={isTabletOrMobile ? { width: '90%', minHeight: 60 } : undefined}
-                    completed={completed}
-                  />
-                </div>
+                <SortableNumber
+                  key={num}
+                  id={num}
+                  mode={mode}
+                  isFirst={idx === 0}
+                  isLast={idx === numbers.length - 1}
+                  mobileStyle={isTabletOrMobile ? { width: '90%', minHeight: 60 } : undefined}
+                  completed={completed}
+                />
               ))}
             </div>
           </SortableContext>
@@ -451,14 +450,8 @@ function FindMyNumberTask() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     return arr;
   });
-
-  // right items contain a stable id and the word; using index-based ids avoids collisions when words/numbers repeat
-  const [rightItems, setRightItems] = useState<Array<{ id: string; word: string }>>(() => {
-    const words = leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }));
-    return shuffleArray(words);
-  });
-
-  const [matchedByIndex, setMatchedByIndex] = useState<Record<number, boolean>>({});
+  const [rightWords, setRightWords] = useState<string[]>(() => shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
+  const [matched, setMatched] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<string | null>(null);
 
   // helper
@@ -489,43 +482,31 @@ function FindMyNumberTask() {
   }
 
   useEffect(() => {
-    // initialize right items when leftNumbers changes
-    setRightItems(shuffleArray(leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
-  }, [leftNumbers]);
+    setRightWords(shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString())));
+  }, []);
 
   function reset() {
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     setLeftNumbers(arr);
-    setRightItems(shuffleArray(arr.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
-    setMatchedByIndex({});
+    setRightWords(shuffleArray(arr.map(n => numberSpellings[n] || n.toString())));
+    setMatched({});
     setResult(null);
   }
 
   function handleDragStart() { disablePageScroll(); }
   function handleDragEnd() { enablePageScroll(); }
 
-  // activeId will be like 'r-2' and overId like 'l-3'
   function handleDrop(activeId: string, overId: string | null) {
     if (!overId) return;
-    if (!activeId.startsWith('r-') || !overId.startsWith('l-')) return;
-  const overIndex = Number(overId.split('-')[1]);
-    const word = rightItems.find(it => it.id === activeId)?.word;
-    if (word == null) return;
-    const targetNumber = leftNumbers[overIndex];
+    const targetNumber = Number(overId);
     const correctWord = numberSpellings[targetNumber] || targetNumber.toString();
-    if (word === correctWord) {
-      // mark exact left index matched
-      setMatchedByIndex(prev => ({ ...prev, [overIndex]: true }));
-      // remove only the dragged right item (by id)
-      setRightItems(prev => prev.filter(it => it.id !== activeId));
-      // check completion based on matchedByIndex after update
+    if (activeId === correctWord) {
+      setMatched(prev => ({ ...prev, [targetNumber]: true }));
+      setRightWords(prev => prev.filter(w => w !== activeId));
       setTimeout(() => {
-        setMatchedByIndex(current => {
-          const allMatched = leftNumbers.every((_, idx) => Boolean(current[idx]));
-          if (allMatched) {
-            setResult('🎉 Good job!');
-            setTimeout(() => setResult(null), 2000);
-          }
+        setMatched(current => {
+          const allMatched = leftNumbers.every(n => current[n] || false);
+          if (allMatched) { setResult('🎉 Good job!'); setTimeout(() => setResult(null), 2000); }
           return current;
         });
       }, 50);
@@ -546,10 +527,10 @@ function FindMyNumberTask() {
     );
   }
 
-  function NumberTile({ num, index }: { num: number; index: number }) {
-    const { setNodeRef, isOver } = useDroppable({ id: `l-${index}` });
+  function NumberTile({ num }: { num: number }) {
+    const { setNodeRef, isOver } = useDroppable({ id: String(num) });
     return (
-      <div ref={setNodeRef} className={`h-16 flex items-center justify-center p-3 rounded-lg border-2 ${matchedByIndex[index] ? 'bg-green-600 text-white border-green-500' : 'bg-red-600 text-white border-red-400'} ${isOver ? 'ring-4 ring-sky-300' : ''}`}>
+      <div ref={setNodeRef} className={`h-16 flex items-center justify-center p-3 rounded-lg border-2 ${matched[num] ? 'bg-green-600 text-white border-green-500' : 'bg-red-600 text-white border-red-400'} ${isOver ? 'ring-4 ring-sky-300' : ''}`}>
         <div className="text-xl font-extrabold">{num}</div>
       </div>
     );
@@ -568,10 +549,10 @@ function FindMyNumberTask() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={(e) => { handleDragEnd(); const activeId = String(e.active.id); const overId = e.over?.id ? String(e.over.id) : null; handleDrop(activeId, overId); }} onDragCancel={handleDragEnd}>
         <div className="flex w-full gap-6">
           <div className="flex flex-col gap-3 w-1/2">
-            {leftNumbers.map((num, idx) => (<NumberTile key={`l-${idx}`} num={num} index={idx} />))}
+            {leftNumbers.map(num => (<NumberTile key={num} num={num} />))}
           </div>
           <div className="flex flex-col gap-3 w-1/2">
-            {rightItems.map(item => (<DraggableWordDnd key={item.id} id={item.id} word={item.word} />))}
+            {rightWords.map(word => (<DraggableWordDnd key={word} id={word} word={word} />))}
           </div>
         </div>
       </DndContext>
@@ -593,7 +574,21 @@ function FindMyNumberTask() {
   );
 }
 
-// native DraggableWord removed in favor of dnd-kit implementation
+function DraggableWord({ word, onDropOnNumber, onDragStartNative, onDragEndNative }: { word: string; onDropOnNumber: (w: string, n: number) => void; onDragStartNative?: () => void; onDragEndNative?: () => void }) {
+  // for simplicity, we'll implement native drag events
+  function handleDragStart(e: React.DragEvent) {
+    try { onDragStartNative && onDragStartNative(); } catch {}
+    e.dataTransfer.setData('text/plain', word);
+  }
+  function handleDragEnd(e: React.DragEvent) {
+    try { onDragEndNative && onDragEndNative(); } catch {}
+  }
+  return (
+    <div draggable className="h-16 w-full flex items-center justify-center p-2 rounded-lg bg-red-600 text-white border-2 border-red-400 cursor-grab" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="text-lg font-bold text-center w-full">{word}</div>
+    </div>
+  );
+}
 
 function UKGPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);

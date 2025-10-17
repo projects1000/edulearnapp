@@ -88,7 +88,7 @@ export default function Home() {
         {showInstallHelp && (
           <div className="absolute top-12 right-0 mr-2 bg-white rounded-lg shadow p-2 text-sm text-gray-700">
             <div className="font-semibold">Install tip</div>
-            <div>Open your browser menu and select "Add to Home screen" (or "Install app").</div>
+            <div>Open your browser menu and select &quot;Add to Home screen&quot; (or &quot;Install app&quot;).</div>
           </div>
         )}
       </header>

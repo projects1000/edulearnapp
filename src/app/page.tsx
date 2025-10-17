@@ -120,14 +120,9 @@ export default function Home() {
       </main>
       {/* UKG Tasks Section removed, now on separate page */}
       <footer className="mt-12 text-center text-sm text-gray-500">
-  &copy; {new Date().getFullYear()} EduLearn Play Factory. All rights reserved.
+        ©2025 Edulearn Play factory. All right reserved
+        <div className="mt-2 text-xs text-gray-600">Developed By<br/>Priyabrata Pattanaik<br/>+91-9702160068</div>
       </footer>
-      {/* Developer credit - small fixed block bottom-left */}
-      <div className="fixed left-4 bottom-4 text-xs text-gray-500 bg-white bg-opacity-80 backdrop-blur-sm rounded px-2 py-1 shadow-inner">
-        <div className="font-semibold">Developed By</div>
-        <div>Priyabrata Pattanaik</div>
-        <div className="mt-0">+91-9702160068</div>
-      </div>
     </div>
   );
 }

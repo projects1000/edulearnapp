@@ -23,8 +23,9 @@ export default function Home() {
   function isiOS() {
     try {
       const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-      const standalone = typeof (window as any).navigator !== 'undefined' ? (window as any).navigator.standalone : undefined;
-      return /iphone|ipad|ipod/i.test(ua) && !('standalone' in navigator && Boolean(standalone));
+      // Use display-mode media query to detect standalone mode instead of accessing non-standard navigator.standalone
+      const isStandalone = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
+      return /iphone|ipad|ipod/i.test(ua) && !isStandalone;
     } catch {
       return false;
     }

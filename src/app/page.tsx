@@ -5,15 +5,20 @@ import Link from "next/link";
 
 // Removed unused BeforeAfterNumberTask
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice?: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+};
+
 export default function Home() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState<boolean>(() => {
     try { return localStorage.getItem('edulearn_installed') === '1'; } catch { return false; }
   });
 
   // Listen for beforeinstallprompt
   useEffect(() => {
-    const handler = (e: any) => {
+    const handler = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
@@ -36,13 +41,13 @@ export default function Home() {
     try {
       // show the install prompt
       await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
+      const choice = deferredPrompt.userChoice ? await deferredPrompt.userChoice : null;
       if (choice && choice.outcome === 'accepted') {
         try { localStorage.setItem('edulearn_installed', '1'); } catch {}
         setIsInstalled(true);
       }
       setDeferredPrompt(null);
-    } catch (err) {
+    } catch {
       // ignore
     }
   }

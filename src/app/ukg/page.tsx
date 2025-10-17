@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useMediaQuery } from 'react-responsive';
 
@@ -84,6 +84,7 @@ function AscendingDescendingTask() {
   });
   const [result, setResult] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
+  const resetTimerRef = useRef<number | null>(null);
 
   // Responsive sensor selection
   const isTabletOrMobile = useMediaQuery({ maxWidth: 1024 });
@@ -140,7 +141,13 @@ function AscendingDescendingTask() {
           if (reordered.every((n, i) => n === correct[i])) {
             setResult('🎉 Good job!');
             setCompleted(true);
-            setTimeout(() => setResult(null), 2000);
+            // clear any existing timer then schedule reset after 2s
+            if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+            resetTimerRef.current = window.setTimeout(() => {
+              // move to next task and clear result/completed
+              nextTask();
+              resetTimerRef.current = null;
+            }, 2000) as unknown as number;
           } else {
             setResult(null);
             setCompleted(false);
@@ -154,11 +161,18 @@ function AscendingDescendingTask() {
     enablePageScroll();
   }
   function nextTask() {
+    // if a reset timer exists, clear it to avoid duplicate resets
+    if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
     setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5));
     setResult(null);
     setMode(Math.random() > 0.5 ? 'asc' : 'desc');
     setCompleted(false);
   }
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+    };
+  }, []);
   return (
     <div className="w-full flex flex-col items-center bg-gradient-to-br from-pink-100 via-yellow-100 to-blue-100 rounded-xl p-4 shadow-md">
       <div className="mb-2 flex flex-col items-center gap-1">
@@ -456,6 +470,7 @@ function FindMyNumberTask() {
   const [rightItems, setRightItems] = useState<Array<{ id: string; word: string }>>(() => shuffleArray(leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
   const [matched, setMatched] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<string | null>(null);
+  const resetTimerRef = useRef<number | null>(null);
 
   // helper
   function shuffleArray<T>(arr: T[]) { return [...arr].sort(() => Math.random() - 0.5); }
@@ -490,6 +505,8 @@ function FindMyNumberTask() {
   }, [leftNumbers]);
 
   function reset() {
+    // clear any pending auto-reset timer
+    if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
     const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
     setLeftNumbers(arr);
     setRightItems(shuffleArray(arr.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
@@ -520,6 +537,22 @@ function FindMyNumberTask() {
       }, 50);
     }
   }
+
+  // watch for result and schedule auto-reset when all matched
+  useEffect(() => {
+    if (result && result.startsWith('🎉')) {
+      // clear any existing timer
+      if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+      resetTimerRef.current = window.setTimeout(() => {
+        reset();
+        resetTimerRef.current = null;
+      }, 2000) as unknown as number;
+    }
+    return () => {
+      // cleanup any timer when component unmounts or result changes
+      if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
+    };
+  }, [result]);
 
   // draggable word using dnd-kit
   function DraggableWordDnd({ id, word }: { id: string; word: string }) {

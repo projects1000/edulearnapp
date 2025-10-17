@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 // Removed unused BeforeAfterNumberTask
@@ -52,11 +52,45 @@ export default function Home() {
     }
   }
 
+  // show a short helper message when prompt not available
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const helpTimerRef = useRef<number | null>(null);
+
+  function handleInstallIconClick() {
+    if (isInstalled) return; // already installed
+    if (deferredPrompt) {
+      handleInstallClick();
+      return;
+    }
+    // show fallback helper (e.g. "Use browser menu → Add to Home screen")
+    setShowInstallHelp(true);
+    if (helpTimerRef.current) { clearTimeout(helpTimerRef.current); helpTimerRef.current = null; }
+    helpTimerRef.current = window.setTimeout(() => { setShowInstallHelp(false); helpTimerRef.current = null; }, 3500) as unknown as number;
+  }
+
+  useEffect(() => {
+    return () => {
+      if (helpTimerRef.current) { clearTimeout(helpTimerRef.current); helpTimerRef.current = null; }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-100 to-yellow-100 flex flex-col items-center justify-center p-4 sm:p-8">
-      <header className="w-full max-w-2xl text-center mb-8">
+      <header className="w-full max-w-2xl text-center mb-8 relative">
   <h1 className="text-4xl sm:text-5xl font-extrabold text-pink-600 mb-2 drop-shadow-lg">EduLearn Play Factory</h1>
         <p className="text-lg sm:text-xl text-blue-700 font-semibold">Fun Learning for Nursery, LKG, UKG</p>
+        {/* Persistent install icon - top-right */}
+        <div className="absolute top-0 right-0 mt-2 mr-2">
+          <button onClick={handleInstallIconClick} title={isInstalled ? 'Installed' : 'Install app'} className={`p-2 rounded-full shadow-lg transition-colors ${isInstalled ? 'bg-gray-200 text-gray-600' : 'bg-green-500 text-white hover:bg-green-600'}`}>
+            <span className="text-2xl">⬇️</span>
+          </button>
+        </div>
+        {showInstallHelp && (
+          <div className="absolute top-12 right-0 mr-2 bg-white rounded-lg shadow p-2 text-sm text-gray-700">
+            <div className="font-semibold">Install tip</div>
+            <div>Open your browser menu and select "Add to Home screen" (or "Install app").</div>
+          </div>
+        )}
       </header>
       <main className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">
         {/* Nursery Card */}

@@ -11,30 +11,9 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 export default function Home() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState<boolean>(() => {
     try { return localStorage.getItem('edulearn_installed') === '1'; } catch { return false; }
   });
-
-  // Listen for beforeinstallprompt
-  useEffect(() => {
-    const handler = (e: BeforeInstallPromptEvent) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler as EventListener);
-    // appinstalled event
-    const installedHandler = () => {
-      try { localStorage.setItem('edulearn_installed', '1'); } catch {}
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-    };
-    window.addEventListener('appinstalled', installedHandler as EventListener);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler as EventListener);
-      window.removeEventListener('appinstalled', installedHandler as EventListener);
-    };
-  }, []);
 
   // We'll auto-prompt on first visit when beforeinstallprompt fires (Android). For iOS, show a small helper UI.
   const [showInstallHelp, setShowInstallHelp] = useState(false);
@@ -43,7 +22,9 @@ export default function Home() {
 
   function isiOS() {
     try {
-      return /iphone|ipad|ipod/i.test(navigator.userAgent) && !('standalone' in navigator && (navigator as any).standalone);
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const standalone = typeof (window as any).navigator !== 'undefined' ? (window as any).navigator.standalone : undefined;
+      return /iphone|ipad|ipod/i.test(ua) && !('standalone' in navigator && Boolean(standalone));
     } catch {
       return false;
     }
@@ -99,14 +80,14 @@ export default function Home() {
       window.removeEventListener('appinstalled', onAppInstalled as EventListener);
       if (helpTimer) { clearTimeout(helpTimer); helpTimer = null; }
     };
-  }, []);
+  }, [isInstalled]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-100 to-yellow-100 flex flex-col items-center justify-center p-4 sm:p-8">
       {showInstallHelp && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-lg shadow-lg p-3 text-center max-w-xs">
           <div className="font-semibold">Install on iPhone</div>
-          <div className="text-sm mt-1">Tap the Share button, then "Add to Home Screen".</div>
+          <div className="text-sm mt-1">Tap the Share button, then &quot;Add to Home Screen&quot;.</div>
           <button className="mt-2 text-xs text-blue-600" onClick={() => setShowInstallHelp(false)}>Got it</button>
         </div>
       )}
@@ -140,6 +121,12 @@ export default function Home() {
       <footer className="mt-12 text-center text-sm text-gray-500">
   &copy; {new Date().getFullYear()} EduLearn Play Factory. All rights reserved.
       </footer>
+      {/* Developer credit - small fixed block bottom-left */}
+      <div className="fixed left-4 bottom-4 text-xs text-gray-500 bg-white bg-opacity-80 backdrop-blur-sm rounded px-2 py-1 shadow-inner">
+        <div className="font-semibold">Developed By</div>
+        <div>Priyabrata Pattanaik</div>
+        <div className="mt-0">+91-9702160068</div>
+      </div>
     </div>
   );
 }

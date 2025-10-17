@@ -24,9 +24,10 @@ export type SortableNumberProps = {
   isFirst: boolean;
   isLast: boolean;
   mobileStyle?: React.CSSProperties;
+  completed?: boolean;
 };
 
-export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle }: SortableNumberProps) {
+export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, completed = false }: SortableNumberProps) {
   const {
     attributes,
     listeners,
@@ -54,7 +55,9 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle }: Sorta
 
       )}
       <button
-        className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 border-yellow-400 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400`}
+        className={`font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+          completed ? 'bg-green-600 text-white border-green-400' : 'bg-red-600 text-white border-red-400'
+        }`}
         style={{ width: '100%', fontSize: '2rem', touchAction: 'none', WebkitUserSelect: 'none' }}
         aria-label={`Drag number ${id}`}
         {...attributes}
@@ -79,6 +82,7 @@ function AscendingDescendingTask() {
     return arr.sort(() => Math.random() - 0.5);
   });
   const [result, setResult] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
 
   // Responsive sensor selection
   const isTabletOrMobile = useMediaQuery({ maxWidth: 1024 });
@@ -134,9 +138,11 @@ function AscendingDescendingTask() {
           const correct = [...reordered].sort((a, b) => mode === 'asc' ? a - b : b - a);
           if (reordered.every((n, i) => n === correct[i])) {
             setResult('🎉 Good job!');
+            setCompleted(true);
             setTimeout(() => setResult(null), 2000);
           } else {
             setResult(null);
+            setCompleted(false);
           }
         }, 200);
       }
@@ -150,6 +156,7 @@ function AscendingDescendingTask() {
     setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5));
     setResult(null);
     setMode(Math.random() > 0.5 ? 'asc' : 'desc');
+    setCompleted(false);
   }
   return (
     <div className="w-full flex flex-col items-center bg-gradient-to-br from-pink-100 via-yellow-100 to-blue-100 rounded-xl p-4 shadow-md">
@@ -171,6 +178,7 @@ function AscendingDescendingTask() {
                   isFirst={idx === 0}
                   isLast={idx === numbers.length - 1}
                   mobileStyle={isTabletOrMobile ? { width: '90%', minHeight: 60 } : undefined}
+                  completed={completed}
                 />
               ))}
             </div>
@@ -403,6 +411,169 @@ function BeforeAfterNumberTask() {
   );
 }
 
+// Find My Number Task
+function ArrowDraggable({ running = true }: { running?: boolean }) {
+  // Auto-oscillating arrow: moves left and right continuously to indicate dragging direction.
+  const [x, setX] = React.useState(0);
+
+  useEffect(() => {
+    if (!running) {
+      // stop and reset position
+      setX(0);
+      return;
+    }
+    let toggle = false;
+    const id = setInterval(() => {
+      toggle = !toggle;
+      // move left by 26px, then back to 0
+      setX(toggle ? -26 : 0);
+    }, 600);
+    return () => clearInterval(id);
+  }, [running]);
+
+  return (
+    <div className="inline-block select-none" style={{ touchAction: 'none' }}>
+      <div className="text-4xl font-extrabold text-green-600 transition-transform duration-300"
+        style={{ transform: `translateX(${x}px)` }}
+      >
+        &#8592;
+      </div>
+    </div>
+  );
+}
+
+function FindMyNumberTask() {
+  const total = 5;
+  const [leftNumbers, setLeftNumbers] = useState<number[]>(() => {
+    const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
+    return arr;
+  });
+  const [rightWords, setRightWords] = useState<string[]>(() => {
+    // original words (unshuffled) derived from leftNumbers
+    return leftNumbers.map(n => numberSpellings[n] || n.toString());
+  });
+  // displayedRightWords keeps a shuffled but stable order for rendering so words are disordered
+  const [displayedRightWords, setDisplayedRightWords] = useState<Array<string | null>>(() => {
+    return shuffleArray(leftNumbers.map(n => numberSpellings[n] || n.toString()));
+  });
+  const [matched, setMatched] = useState<Record<number, boolean>>({});
+  const [result, setResult] = useState<string | null>(null);
+
+  // simple shuffle helper
+  function shuffleArray<T>(arr: T[]) {
+    return [...arr].sort(() => Math.random() - 0.5);
+  }
+
+  useEffect(() => {
+    // regenerate words when the task mounts or when leftNumbers changes
+    const words = leftNumbers.map(n => numberSpellings[n] || n.toString());
+    setRightWords(words);
+    setDisplayedRightWords(shuffleArray(words));
+    setMatched({});
+  }, []); // run once
+
+  // DnD handlers - simple matching by content
+  function handleDrop(word: string, targetNumber: number) {
+    const correctWord = numberSpellings[targetNumber] || targetNumber.toString();
+    if (word === correctWord) {
+      setMatched(prev => ({ ...prev, [targetNumber]: true }));
+      // remove the matched word from displayedRightWords (replace with null so layout stays aligned)
+      setDisplayedRightWords(prev => {
+        const i = prev.findIndex(w => w === word);
+        if (i === -1) return prev;
+        const copy = [...prev];
+        copy[i] = null;
+        return copy;
+      });
+      // Check for completion after a short delay to allow state to update
+      setTimeout(() => {
+        setMatched(current => {
+          const allMatched = leftNumbers.every(n => current[n] || (n === targetNumber));
+          // If all matched, show success
+          if (allMatched) {
+            setResult('🎉 Good job!');
+            setTimeout(() => setResult(null), 2000);
+          }
+          return current;
+        });
+      }, 50);
+    }
+  }
+
+  function reset() {
+    const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
+    setLeftNumbers(arr);
+    const words = arr.map(n => numberSpellings[n] || n.toString());
+    setRightWords(words);
+    setDisplayedRightWords(shuffleArray(words));
+    setMatched({});
+    setResult(null);
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center bg-white rounded-xl p-4 shadow-md">
+      <h3 className="text-xl font-bold mb-4">Find My Number</h3>
+      <div className="mb-2 text-sm font-semibold text-gray-700 flex items-center justify-between w-full">
+        <span>DRAG LETTERS OVER NUMBER</span>
+        <div className="ml-4">
+          <ArrowDraggable running={!Boolean(result)} />
+        </div>
+      </div>
+      <div className="flex w-full gap-6">
+        <div className="flex flex-col gap-3 w-1/2">
+          {leftNumbers.map((num) => (
+            <div
+              key={num}
+              className={`h-16 flex items-center justify-center p-3 rounded-lg border-2 ${matched[num] ? 'bg-green-600 text-white border-green-500' : 'bg-red-600 text-white border-red-400'}`}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const word = e.dataTransfer.getData('text/plain');
+                if (word) handleDrop(word, num);
+              }}
+            >
+              <div className="text-xl font-extrabold">{num}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 w-1/2">
+          {displayedRightWords.map((word, idx) => (
+            word ? (
+              <DraggableWord key={idx} word={word} onDropOnNumber={handleDrop} />
+            ) : (
+              <div key={idx} className="h-16 w-full" />
+            )
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-4 mt-4">
+        <button className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold px-4 py-2 rounded-lg" onClick={reset}>Reset</button>
+      </div>
+      {result && result.startsWith('🎉') && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white bg-opacity-90 rounded-2xl shadow-2xl p-8 flex flex-col items-center animate-bounce">
+            <span className="text-6xl">🎉</span>
+            <span className="text-3xl font-extrabold text-green-600 mb-2">Congratulations!</span>
+            <span className="text-xl text-yellow-700">You matched all numbers correctly!</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DraggableWord({ word, onDropOnNumber }: { word: string; onDropOnNumber: (w: string, n: number) => void }) {
+  // for simplicity, we'll implement native drag events
+  function handleDragStart(e: React.DragEvent) {
+    e.dataTransfer.setData('text/plain', word);
+  }
+  return (
+    <div draggable className="h-16 w-full flex items-center justify-center p-2 rounded-lg bg-red-600 text-white border-2 border-red-400 cursor-grab" onDragStart={handleDragStart}>
+      <div className="text-lg font-bold text-center w-full">{word}</div>
+    </div>
+  );
+}
+
 function UKGPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<string | null>(null);
@@ -467,11 +638,18 @@ function UKGPage() {
                 >
                   Ascending/Descending
                 </button>
+                <button
+                  className={`w-full bg-red-200 hover:bg-red-300 text-red-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
+                  onClick={() => setActiveTask("findNumber")}
+                >
+                  Find My Number
+                </button>
               </>
             )}
             <div className="w-full mt-6">
               {activeTask === "beforeAfter" && <BeforeAfterNumberTask />}
               {activeTask === "ascdesc" && <AscendingDescendingTask />}
+              {activeTask === "findNumber" && <FindMyNumberTask />}
             </div>
             <button
               className="mt-4 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold"

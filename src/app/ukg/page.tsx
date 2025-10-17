@@ -24,9 +24,10 @@ export type SortableNumberProps = {
   isFirst: boolean;
   isLast: boolean;
   mobileStyle?: React.CSSProperties;
+  completed?: boolean;
 };
 
-export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle }: SortableNumberProps) {
+export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, completed = false }: SortableNumberProps) {
   const {
     attributes,
     listeners,
@@ -54,7 +55,9 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle }: Sorta
 
       )}
       <button
-        className={`bg-white text-pink-700 font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 border-yellow-400 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400`}
+        className={`font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+          completed ? 'bg-green-600 text-white border-green-400' : 'bg-red-600 text-white border-red-400'
+        }`}
         style={{ width: '100%', fontSize: '2rem', touchAction: 'none', WebkitUserSelect: 'none' }}
         aria-label={`Drag number ${id}`}
         {...attributes}
@@ -79,6 +82,7 @@ function AscendingDescendingTask() {
     return arr.sort(() => Math.random() - 0.5);
   });
   const [result, setResult] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
 
   // Responsive sensor selection
   const isTabletOrMobile = useMediaQuery({ maxWidth: 1024 });
@@ -134,9 +138,11 @@ function AscendingDescendingTask() {
           const correct = [...reordered].sort((a, b) => mode === 'asc' ? a - b : b - a);
           if (reordered.every((n, i) => n === correct[i])) {
             setResult('🎉 Good job!');
+            setCompleted(true);
             setTimeout(() => setResult(null), 2000);
           } else {
             setResult(null);
+            setCompleted(false);
           }
         }, 200);
       }
@@ -171,6 +177,7 @@ function AscendingDescendingTask() {
                   isFirst={idx === 0}
                   isLast={idx === numbers.length - 1}
                   mobileStyle={isTabletOrMobile ? { width: '90%', minHeight: 60 } : undefined}
+                  completed={completed}
                 />
               ))}
             </div>

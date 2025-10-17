@@ -171,17 +171,18 @@ function AscendingDescendingTask() {
       <div className="w-full mb-4">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <SortableContext items={numbers} strategy={rectSortingStrategy}>
-            <div className="flex flex-col gap-4 justify-center items-center w-full">
+            <div className="flex flex-col lg:flex-row gap-4 justify-center items-center w-full flex-wrap">
               {numbers.map((num, idx) => (
-                <SortableNumber
-                  key={num}
-                  id={num}
-                  mode={mode}
-                  isFirst={idx === 0}
-                  isLast={idx === numbers.length - 1}
-                  mobileStyle={isTabletOrMobile ? { width: '90%', minHeight: 60 } : undefined}
-                  completed={completed}
-                />
+                <div key={num} className={isTabletOrMobile ? 'w-full' : 'flex-1 px-2'}>
+                  <SortableNumber
+                    id={num}
+                    mode={mode}
+                    isFirst={idx === 0}
+                    isLast={idx === numbers.length - 1}
+                    mobileStyle={isTabletOrMobile ? { width: '90%', minHeight: 60 } : undefined}
+                    completed={completed}
+                  />
+                </div>
               ))}
             </div>
           </SortableContext>

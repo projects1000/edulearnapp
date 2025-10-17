@@ -43,7 +43,7 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, complet
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    minWidth: 60,
+    minWidth: 42,
     boxShadow: isOver ? '0 0 0 4px #38bdf8' : '0 2px 8px #fbbf24',
     zIndex: isDragging ? 10 : 1,
     ...(typeof mobileStyle === 'object' ? mobileStyle : {}),
@@ -57,10 +57,10 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, complet
 
       )}
       <button
-        className={`font-extrabold text-2xl rounded-full shadow-lg px-8 py-6 border-4 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+        className={`font-extrabold text-2xl rounded-full shadow-lg px-6 py-4 border-4 cursor-grab transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
           completed ? 'bg-green-600 text-white border-green-400' : 'bg-red-600 text-white border-red-400'
         }`}
-        style={{ width: '100%', fontSize: '2rem', touchAction: 'none', WebkitUserSelect: 'none' }}
+        style={{ width: '70%', fontSize: '1.4rem', touchAction: 'none', WebkitUserSelect: 'none' }}
         aria-label={`Drag number ${id}`}
         {...attributes}
         {...listeners}

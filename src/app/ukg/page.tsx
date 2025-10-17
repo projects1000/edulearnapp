@@ -492,7 +492,7 @@ function UKGPage() {
         )}
       </main>
       <footer className="mt-12 text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} EduLearn Play School. All rights reserved.
+  &copy; {new Date().getFullYear()} EduLearn Play Factory. All rights reserved.
       </footer>
     </div>
   );

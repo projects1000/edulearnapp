@@ -44,7 +44,6 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, complet
     transition,
     opacity: isDragging ? 0.5 : 1,
     minWidth: 60,
-    boxShadow: isOver ? '0 0 0 4px #38bdf8' : '0 2px 8px #fbbf24',
     zIndex: isDragging ? 10 : 1,
     ...(typeof mobileStyle === 'object' ? mobileStyle : {}),
   };
@@ -176,7 +175,7 @@ function AscendingDescendingTask() {
             <div className="flex flex-col lg:flex-row gap-4 justify-center items-center w-full lg:flex-nowrap">
               {numbers.map((num, idx) => (
                 // wrap each sortable item so desktop uses a fixed width (single row) while mobile stays full-width
-                <div key={num} className={isTabletOrMobile ? 'w-full' : 'px-2'} style={isTabletOrMobile ? undefined : { width: 120 }}>
+                <div key={num} className={isTabletOrMobile ? 'w-full flex justify-center' : 'px-2'} style={isTabletOrMobile ? undefined : { width: 120 }}>
                   <SortableNumber
                     id={num}
                     mode={mode}
@@ -640,9 +639,7 @@ function UKGPage() {
             {activeTask === "beforeAfter" && (
               <h2 className="text-2xl font-extrabold text-pink-700 mb-2">Before/After Number</h2>
             )}
-            {activeTask === "ascdesc" && (
-              <h2 className="text-2xl font-extrabold text-yellow-700 mb-2">Ascending/Descending</h2>
-            )}
+            {/** Ascending/Descending header removed per request; task UI still shows inside the task area */}
             {/* Show task buttons only if no task is active */}
             {!activeTask && (
               <>

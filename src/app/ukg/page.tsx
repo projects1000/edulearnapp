@@ -472,6 +472,31 @@ function FindMyNumberTask() {
     setMatched({});
   }, []); // run once
 
+  // touch/drag helpers to prevent page scroll during native drag on touch devices
+  let touchMoveHandler: ((e: TouchEvent) => void) | null = null;
+  function disablePageScrollForNativeDrag() {
+    try {
+      document.documentElement.style.touchAction = 'none';
+      document.body.style.overflow = 'hidden';
+      touchMoveHandler = (e: TouchEvent) => e.preventDefault();
+      document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    } catch {
+      // ignore if document not available
+    }
+  }
+  function enablePageScrollForNativeDrag() {
+    try {
+      document.documentElement.style.touchAction = '';
+      document.body.style.overflow = '';
+      if (touchMoveHandler) {
+        document.removeEventListener('touchmove', touchMoveHandler as EventListener);
+        touchMoveHandler = null;
+      }
+    } catch {
+      // ignore if document not available
+    }
+  }
+
   // DnD handlers - simple matching by content
   function handleDrop(word: string, targetNumber: number) {
     const correctWord = numberSpellings[targetNumber] || targetNumber.toString();
@@ -539,7 +564,7 @@ function FindMyNumberTask() {
         <div className="flex flex-col gap-3 w-1/2">
           {displayedRightWords.map((word, idx) => (
             word ? (
-              <DraggableWord key={idx} word={word} onDropOnNumber={handleDrop} />
+              <DraggableWord key={idx} word={word} onDropOnNumber={handleDrop} onDragStartNative={disablePageScrollForNativeDrag} onDragEndNative={enablePageScrollForNativeDrag} />
             ) : (
               <div key={idx} className="h-16 w-full" />
             )
@@ -562,13 +587,17 @@ function FindMyNumberTask() {
   );
 }
 
-function DraggableWord({ word, onDropOnNumber }: { word: string; onDropOnNumber: (w: string, n: number) => void }) {
+function DraggableWord({ word, onDropOnNumber, onDragStartNative, onDragEndNative }: { word: string; onDropOnNumber: (w: string, n: number) => void; onDragStartNative?: () => void; onDragEndNative?: () => void }) {
   // for simplicity, we'll implement native drag events
   function handleDragStart(e: React.DragEvent) {
+    try { onDragStartNative && onDragStartNative(); } catch {}
     e.dataTransfer.setData('text/plain', word);
   }
+  function handleDragEnd(e: React.DragEvent) {
+    try { onDragEndNative && onDragEndNative(); } catch {}
+  }
   return (
-    <div draggable className="h-16 w-full flex items-center justify-center p-2 rounded-lg bg-red-600 text-white border-2 border-red-400 cursor-grab" onDragStart={handleDragStart}>
+    <div draggable className="h-16 w-full flex items-center justify-center p-2 rounded-lg bg-red-600 text-white border-2 border-red-400 cursor-grab" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="text-lg font-bold text-center w-full">{word}</div>
     </div>
   );

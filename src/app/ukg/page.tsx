@@ -76,10 +76,33 @@ export function SortableNumber({ id, value, mode, isFirst, isLast, mobileStyle, 
 }
 
 // Ascending/Descending Task
+// helper to produce `count` unique random integers between min and max inclusive
+function uniqueRandomIntegers(count: number, min: number, max: number) {
+  const size = max - min + 1;
+  if (count >= size) {
+    // if requesting all or more, just return the full shuffled range
+    const all: number[] = [];
+    for (let i = min; i <= max; i++) all.push(i);
+    for (let i = all.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [all[i], all[j]] = [all[j], all[i]];
+    }
+    return all.slice(0, count);
+  }
+  // Fisher-Yates on a generated pool, then take first `count`
+  const pool: number[] = [];
+  for (let i = min; i <= max; i++) pool.push(i);
+  for (let i = pool.length - 1; i > 0 && pool.length >= count; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
+
 function AscendingDescendingTask() {
   const [mode, setMode] = useState<'asc' | 'desc'>('asc');
   const [numbers, setNumbers] = useState<Array<{ id: string; value: number }>>(() => {
-    const arr = Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10);
+    const arr = uniqueRandomIntegers(5, 10, 99);
     return arr.sort(() => Math.random() - 0.5).map((v, i) => ({ id: `n-${Date.now()}-${i}-${Math.floor(Math.random()*1000)}`, value: v }));
   });
   const [result, setResult] = useState<string | null>(null);
@@ -163,7 +186,8 @@ function AscendingDescendingTask() {
   function nextTask() {
     // if a reset timer exists, clear it to avoid duplicate resets
     if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
-    setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5).map((v,i) => ({ id: `n-${Date.now()}-${i}-${Math.floor(Math.random()*1000)}`, value: v })));
+    const arr = uniqueRandomIntegers(5, 10, 99).sort(() => Math.random() - 0.5);
+    setNumbers(arr.map((v, i) => ({ id: `n-${Date.now()}-${i}-${Math.floor(Math.random()*1000)}`, value: v })));
     setResult(null);
     setMode(Math.random() > 0.5 ? 'asc' : 'desc');
     setCompleted(false);

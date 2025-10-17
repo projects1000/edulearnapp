@@ -1,12 +1,51 @@
 
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 // Removed unused BeforeAfterNumberTask
 
 export default function Home() {
-  // Removed unused showUKGTasks, setShowUKGTasks, activeTask, setActiveTask
+  const [deferredPrompt, setDeferredPrompt] = useState<any | null>(null);
+  const [isInstalled, setIsInstalled] = useState<boolean>(() => {
+    try { return localStorage.getItem('edulearn_installed') === '1'; } catch { return false; }
+  });
+
+  // Listen for beforeinstallprompt
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler as EventListener);
+    // appinstalled event
+    const installedHandler = () => {
+      try { localStorage.setItem('edulearn_installed', '1'); } catch {}
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+    window.addEventListener('appinstalled', installedHandler as EventListener);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler as EventListener);
+      window.removeEventListener('appinstalled', installedHandler as EventListener);
+    };
+  }, []);
+
+  async function handleInstallClick() {
+    if (!deferredPrompt) return;
+    try {
+      // show the install prompt
+      await deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        try { localStorage.setItem('edulearn_installed', '1'); } catch {}
+        setIsInstalled(true);
+      }
+      setDeferredPrompt(null);
+    } catch (err) {
+      // ignore
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-blue-100 to-yellow-100 flex flex-col items-center justify-center p-4 sm:p-8">
@@ -33,6 +72,15 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-gray-800 mb-2">UKG</h2>
           <p className="text-base text-gray-600 mb-4">Click to see UKG activities!</p>
         </Link>
+        {/* Install PWA button - only show when not installed and prompt available */}
+        {!isInstalled && deferredPrompt && (
+          <div className="col-span-full flex justify-center mt-4">
+            <button onClick={handleInstallClick} className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-full shadow">
+              <span className="text-2xl">⬇️</span>
+              <span>Install App</span>
+            </button>
+          </div>
+        )}
       </main>
       {/* UKG Tasks Section removed, now on separate page */}
       <footer className="mt-12 text-center text-sm text-gray-500">

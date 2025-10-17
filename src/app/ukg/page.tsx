@@ -21,7 +21,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 export type SortableNumberProps = {
-  id: number;
+  id: string;
+  value: number;
   mode: 'asc' | 'desc';
   isFirst: boolean;
   isLast: boolean;
@@ -29,7 +30,7 @@ export type SortableNumberProps = {
   completed?: boolean;
 };
 
-export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, completed = false }: SortableNumberProps) {
+export function SortableNumber({ id, value, mode, isFirst, isLast, mobileStyle, completed = false }: SortableNumberProps) {
   const {
     attributes,
     listeners,
@@ -37,7 +38,6 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, complet
     transform,
     transition,
     isDragging,
-    isOver
   } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -60,11 +60,11 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, complet
           completed ? 'bg-green-600 text-white border-green-400' : 'bg-red-600 text-white border-red-400'
         }`}
         style={{ width: '100%', fontSize: '2rem', touchAction: 'none', WebkitUserSelect: 'none' }}
-        aria-label={`Drag number ${id}`}
+        aria-label={`Drag number ${value}`}
         {...attributes}
         {...listeners}
       >
-        {id}
+        {value}
       </button>
       {isLast && (
         <span className="text-xs text-blue-700 font-bold mt-1 whitespace-nowrap">
@@ -78,9 +78,9 @@ export function SortableNumber({ id, mode, isFirst, isLast, mobileStyle, complet
 // Ascending/Descending Task
 function AscendingDescendingTask() {
   const [mode, setMode] = useState<'asc' | 'desc'>('asc');
-  const [numbers, setNumbers] = useState<number[]>(() => {
+  const [numbers, setNumbers] = useState<Array<{ id: string; value: number }>>(() => {
     const arr = Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10);
-    return arr.sort(() => Math.random() - 0.5);
+    return arr.sort(() => Math.random() - 0.5).map((v, i) => ({ id: `n-${Date.now()}-${i}-${Math.floor(Math.random()*1000)}`, value: v }));
   });
   const [result, setResult] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
@@ -131,14 +131,14 @@ function AscendingDescendingTask() {
     enablePageScroll();
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = numbers.findIndex(n => n === Number(active.id));
-      const newIndex = numbers.findIndex(n => n === Number(over.id));
+      const oldIndex = numbers.findIndex(n => n.id === String(active.id));
+      const newIndex = numbers.findIndex(n => n.id === String(over.id));
       if (oldIndex !== -1 && newIndex !== -1) {
         const reordered = arrayMove(numbers, oldIndex, newIndex);
-        setNumbers(reordered);
+        setNumbers(reordered.map((item, idx) => item));
         setTimeout(() => {
-          const correct = [...reordered].sort((a, b) => mode === 'asc' ? a - b : b - a);
-          if (reordered.every((n, i) => n === correct[i])) {
+          const correct = [...reordered].map(r => r.value).sort((a, b) => mode === 'asc' ? a - b : b - a);
+          if (reordered.every((n, i) => n.value === correct[i])) {
             setResult('🎉 Good job!');
             setCompleted(true);
             // clear any existing timer then schedule reset after 2s
@@ -163,7 +163,7 @@ function AscendingDescendingTask() {
   function nextTask() {
     // if a reset timer exists, clear it to avoid duplicate resets
     if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
-    setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5));
+    setNumbers(Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10).sort(() => Math.random() - 0.5).map((v,i) => ({ id: `n-${Date.now()}-${i}-${Math.floor(Math.random()*1000)}`, value: v })));
     setResult(null);
     setMode(Math.random() > 0.5 ? 'asc' : 'desc');
     setCompleted(false);
@@ -187,11 +187,12 @@ function AscendingDescendingTask() {
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <SortableContext items={numbers} strategy={rectSortingStrategy}>
             <div className="flex flex-col lg:flex-row gap-4 justify-center items-center w-full lg:flex-nowrap">
-              {numbers.map((num, idx) => (
+              {numbers.map((item, idx) => (
                 // wrap each sortable item so desktop uses a fixed width (single row) while mobile stays full-width
-                <div key={num} className={isTabletOrMobile ? 'w-full flex justify-center' : 'px-2'} style={isTabletOrMobile ? undefined : { width: 120 }}>
+                <div key={item.id} className={isTabletOrMobile ? 'w-full flex justify-center' : 'px-2'} style={isTabletOrMobile ? undefined : { width: 120 }}>
                   <SortableNumber
-                    id={num}
+                    id={item.id}
+                    value={item.value}
                     mode={mode}
                     isFirst={idx === 0}
                     isLast={idx === numbers.length - 1}
@@ -538,13 +539,18 @@ function FindMyNumberTask() {
     }
   }
 
+  // use a ref to hold the reset function so effect doesn't need it as dependency
+  const resetRef = useRef(reset);
+  useEffect(() => { resetRef.current = reset; }, [reset]);
+
   // watch for result and schedule auto-reset when all matched
   useEffect(() => {
     if (result && result.startsWith('🎉')) {
       // clear any existing timer
       if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
       resetTimerRef.current = window.setTimeout(() => {
-        reset();
+        // call the stable ref
+        resetRef.current();
         resetTimerRef.current = null;
       }, 2000) as unknown as number;
     }
@@ -615,21 +621,7 @@ function FindMyNumberTask() {
   );
 }
 
-function DraggableWord({ word, onDropOnNumber, onDragStartNative, onDragEndNative }: { word: string; onDropOnNumber: (w: string, n: number) => void; onDragStartNative?: () => void; onDragEndNative?: () => void }) {
-  // for simplicity, we'll implement native drag events
-  function handleDragStart(e: React.DragEvent) {
-    try { onDragStartNative && onDragStartNative(); } catch {}
-    e.dataTransfer.setData('text/plain', word);
-  }
-  function handleDragEnd(e: React.DragEvent) {
-    try { onDragEndNative && onDragEndNative(); } catch {}
-  }
-  return (
-    <div draggable className="h-16 w-full flex items-center justify-center p-2 rounded-lg bg-red-600 text-white border-2 border-red-400 cursor-grab" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="text-lg font-bold text-center w-full">{word}</div>
-    </div>
-  );
-}
+// native-drag fallback removed; app uses dnd-kit DraggableWordDnd component
 
 function UKGPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);

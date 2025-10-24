@@ -4,9 +4,29 @@ import { DndContext, useDraggable, useDroppable, closestCenter } from "@dnd-kit/
 
 function getRandomBalloons(maxNum: number) {
   // Always 5 balloons, numbers 0 to maxNum, allow repetitions
-  const nums = [];
-  for (let i = 0; i < 5; i++) {
-    nums.push(Math.floor(Math.random() * (maxNum + 1)));
+  if (maxNum <= 0) return Array(5).fill(0);
+  // Always include the remaining value (maxNum) if > 0, never show magic number
+  const nums: number[] = [];
+  // Rule 1: magic number must not show in balloons
+  // If remaining is 1, always include 1 and 0
+  if (maxNum === 1) {
+    nums.push(1, 0);
+    while (nums.length < 5) nums.push(0);
+  } else {
+    // Always include the remaining value (maxNum) if > 0 and not forbidden
+    if (maxNum > 1) nums.push(maxNum - 1);
+    // Fill the rest with random numbers between 0 and maxNum-1, avoiding duplicates for small ranges
+    while (nums.length < 5) {
+      let val = Math.floor(Math.random() * maxNum);
+      // Avoid duplicates for small ranges, but allow 0 multiple times
+      if (maxNum <= 6 && nums.includes(val) && val !== 0) continue;
+      nums.push(val);
+    }
+  }
+  // Shuffle balloons
+  for (let i = nums.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [nums[i], nums[j]] = [nums[j], nums[i]];
   }
   return nums;
 }

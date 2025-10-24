@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import MagicBoxOf10 from "./MagicBoxOf10";
 import Link from "next/link";
 import { useMediaQuery } from 'react-responsive';
 
@@ -1034,6 +1035,12 @@ function UKGPage() {
                 >
                   Subtraction (Drag answer)
                 </button>
+                  <button
+                    className={`w-full bg-orange-200 hover:bg-orange-300 text-orange-800 font-bold py-3 rounded-xl shadow transition-colors text-lg`}
+                    onClick={() => setActiveTask("magicBox10")}
+                  >
+                    Magic Box of 10
+                  </button>
               </>
             )}
             <div className="w-full mt-2 lg:mt-0">
@@ -1042,6 +1049,7 @@ function UKGPage() {
               {activeTask === "findNumber" && <FindMyNumberTask />}
               {activeTask === "addition" && <AdditionTask />}
               {activeTask === "subtraction" && <SubtractionTask />}
+                {activeTask === "magicBox10" && <MagicBoxOf10 />}
             </div>
             <button
               className="mt-2 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold"

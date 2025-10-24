@@ -1,23 +1,24 @@
+
 import React, { useState, useRef } from "react";
 import { DndContext, useDraggable, useDroppable, closestCenter } from "@dnd-kit/core";
 
-function getRandomBalloons() {
-  // 10 balloons, numbers 1-9, allow repetitions
+function getRandomBalloons(maxNum: number) {
+  // 10 balloons, numbers 0 to maxNum, allow repetitions
   const nums = [];
   for (let i = 0; i < 10; i++) {
-    nums.push(Math.floor(Math.random() * 9) + 1);
+    nums.push(Math.floor(Math.random() * (maxNum + 1)));
   }
   return nums;
 }
 
 function getRandomBoxValue() {
-  // Random integer between 10 and 15
-  return Math.floor(Math.random() * 6) + 10;
+  // Random integer between 6 and 10
+  return Math.floor(Math.random() * 5) + 6;
 }
 
 function MagicBoxOf10() {
   const [boxValue, setBoxValue] = useState(getRandomBoxValue());
-  const [balloons, setBalloons] = useState(getRandomBalloons());
+  const [balloons, setBalloons] = useState(getRandomBalloons(boxValue));
   const [selected, setSelected] = useState<number[]>([]);
   const [feedback, setFeedback] = useState<string>("");
   const [sparkle, setSparkle] = useState(false);
@@ -38,9 +39,10 @@ function MagicBoxOf10() {
   }, [selected, boxValue, balloons, result]);
 
   function resetGame() {
+    const newBoxValue = getRandomBoxValue();
     setSelected([]);
-    setBoxValue(getRandomBoxValue());
-    setBalloons(getRandomBalloons());
+    setBoxValue(newBoxValue);
+    setBalloons(getRandomBalloons(newBoxValue));
     setFeedback("");
     setResult(null);
     setSparkle(false);

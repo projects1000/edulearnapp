@@ -183,11 +183,7 @@ function MagicBoxOf10() {
               <BalloonBubble key={idx} num={num} burst={false} onBurst={() => burstBalloon(idx)} />
             ))}
           </div>
-          <div style={{ marginTop: 18 }}>
-            <button onClick={resetGame} style={{ padding: "0.5rem 1.5rem", fontSize: 18 }}>
-              Reset
-            </button>
-          </div>
+          {/* Removed duplicate Reset button below balloons */}
           {feedback && !result && (
             <div style={{ marginTop: 24, fontSize: 24, color: feedback.startsWith("❌") ? "#e33" : "#093" }}>{feedback}</div>
           )}

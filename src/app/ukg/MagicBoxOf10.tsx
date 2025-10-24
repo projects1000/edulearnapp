@@ -142,7 +142,13 @@ function MagicBoxOf10() {
                   }}
                 >
                   <div style={{ fontSize: 32, fontWeight: 600, color: "#333", minHeight: 40 }}>
-                    {selected.length ? selected.join(" + ") : <span style={{ color: "#bbb" }}>Select numbers…</span>}
+                    {selected.length === 0 && <span style={{ color: "#bbb" }}>Select numbers…</span>}
+                    {selected.length === 1 && (
+                      <span>{selected[0]} + </span>
+                    )}
+                    {selected.length > 1 && selected.map((num, idx) => (
+                      <span key={idx}>{num}{idx < selected.length - 1 ? ' + ' : ''}</span>
+                    ))}
                   </div>
                   {sparkle && (
                     <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
@@ -176,7 +182,9 @@ function MagicBoxOf10() {
               🎉 Congratulations!
             </div>
           )}
-          <div style={{ marginTop: 12, fontSize: 28, color: "#e33", fontWeight: 600 }}>{selected.length ? `= ${currentSum}` : ""}</div>
+          <div style={{ marginTop: 12, fontSize: 28, color: "#e33", fontWeight: 600 }}>
+            {selected.length ? `Total = ${currentSum}` : ""}
+          </div>
           {/* Removed selected numbers as removable bubbles below the box */}
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16, marginBottom: 24, marginTop: 32 }}>
             {balloons.map((num, idx) => (

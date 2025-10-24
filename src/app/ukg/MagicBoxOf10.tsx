@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from "react";
-import { DndContext, useDraggable, useDroppable, closestCenter } from "@dnd-kit/core";
+// Removed unused dnd-kit imports
 
 function getRandomBalloons(maxNum: number) {
   // Always 5 balloons, numbers 0 to maxNum, allow repetitions
@@ -17,10 +17,10 @@ function getRandomBalloons(maxNum: number) {
     if (maxNum > 1) nums.push(maxNum - 1);
     // Fill the rest with random numbers between 0 and maxNum-1, avoiding duplicates for small ranges
     while (nums.length < 5) {
-      let val = Math.floor(Math.random() * maxNum);
-      // Avoid duplicates for small ranges, but allow 0 multiple times
-      if (maxNum <= 6 && nums.includes(val) && val !== 0) continue;
-      nums.push(val);
+    const val = Math.floor(Math.random() * maxNum);
+    // Avoid duplicates for small ranges, but allow 0 multiple times
+    if (maxNum <= 6 && nums.includes(val) && val !== 0) continue;
+    nums.push(val);
     }
   }
   // Shuffle balloons

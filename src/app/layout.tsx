@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NextAuthSessionProvider from "./NextAuthSessionProvider";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -17,7 +18,6 @@ export const metadata: Metadata = {
   title: "EduLearnApp",
   description: "Play school learning app for Nursery, LKG, UKG",
   manifest: "/manifest.json",
-  themeColor: "#fbbf24",
 };
 
 export default function RootLayout({
@@ -42,9 +42,11 @@ export default function RootLayout({
           <span className="text-xl font-extrabold text-pink-700 tracking-wide">EduLearnApp</span>
         </header>
         {/* Main content with space for header and nav */}
-  <main className="flex-1 pt-16 pb-16 w-full sm:pt-0 sm:pb-0">
-          {children}
-        </main>
+        <NextAuthSessionProvider>
+          <main className="flex-1 pt-16 pb-16 w-full sm:pt-0 sm:pb-0">
+            {children}
+          </main>
+        </NextAuthSessionProvider>
         {/* Fixed bottom nav: only mobile */}
         <nav className="fixed bottom-0 left-0 w-full z-20 bg-gradient-to-r from-yellow-300 via-pink-200 to-blue-200 shadow-lg flex justify-around items-center h-14 rounded-t-2xl sm:hidden">
           <Link href="/" className="flex flex-col items-center text-pink-700 font-bold text-xs hover:text-blue-700 transition-colors">

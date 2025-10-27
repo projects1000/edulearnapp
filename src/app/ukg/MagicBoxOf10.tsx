@@ -1,4 +1,4 @@
-
+"use client";
 import React, { useState, useRef } from "react";
 // Removed unused dnd-kit imports
 
@@ -71,17 +71,9 @@ function MagicBoxOf10() {
       clearTimeout(resetTimerRef.current);
       resetTimerRef.current = null;
     }
-      // ...existing code...
-        setFeedback("");
-        setResult(null);
-        setSparkle(false);
-        if (resetTimerRef.current) {
-          clearTimeout(resetTimerRef.current);
-          resetTimerRef.current = null;
-        }
-      }
+  }
 
-      function burstBalloon(idx: number) {
+  function burstBalloon(idx: number) {
         if (result) return;
         const value = balloons[idx];
         const newSelected = [...selected, value];

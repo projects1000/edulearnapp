@@ -14,8 +14,7 @@ export default function Home() {
   const [isInstalled, setIsInstalled] = useState<boolean>(() => {
     try { return localStorage.getItem('edulearn_installed') === '1'; } catch { return false; }
   });
-
-  // We'll auto-prompt on first visit when beforeinstallprompt fires (Android). For iOS, show a small helper UI.
+  const [userName, setUserName] = useState<string | null>(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const firstPromptFlag = 'pwa_first_visit_shown';
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
@@ -23,7 +22,6 @@ export default function Home() {
   function isiOS() {
     try {
       const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-      // Use display-mode media query to detect standalone mode instead of accessing non-standard navigator.standalone
       const isStandalone = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
       return /iphone|ipad|ipod/i.test(ua) && !isStandalone;
     } catch {
@@ -39,7 +37,6 @@ export default function Home() {
       const firstShown = localStorage.getItem(firstPromptFlag) === '1';
       const installed = localStorage.getItem('edulearn_installed') === '1';
       if (!firstShown && !installed) {
-        // small delay so it doesn't interrupt initial rendering
         setTimeout(async () => {
           try {
             await e.prompt();
@@ -65,7 +62,6 @@ export default function Home() {
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
     window.addEventListener('appinstalled', onAppInstalled as EventListener);
 
-    // iOS fallback: show helper once for first-time visitors
     try {
       const firstShown = localStorage.getItem(firstPromptFlag) === '1';
       const installed = localStorage.getItem('edulearn_installed') === '1';
@@ -74,6 +70,11 @@ export default function Home() {
         try { localStorage.setItem(firstPromptFlag, '1'); } catch {}
         helpTimer = window.setTimeout(() => setShowInstallHelp(false), 3500) as unknown as number;
       }
+    } catch {}
+
+    try {
+      const name = localStorage.getItem('edulearn_user_name');
+      if (name) setUserName(name);
     } catch {}
 
     return () => {
@@ -93,8 +94,24 @@ export default function Home() {
         </div>
       )}
       <header className="w-full max-w-2xl text-center mb-8 relative">
-  <h1 className="text-4xl sm:text-5xl font-extrabold text-pink-600 mb-2 drop-shadow-lg">EduLearn Play Factory</h1>
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-pink-600 mb-2 drop-shadow-lg">EduLearn Play Factory</h1>
         <p className="text-lg sm:text-xl text-blue-700 font-semibold">Fun Learning for Nursery, LKG, UKG</p>
+        {/* Show welcome message if logged in, else show login button */}
+        {userName ? (
+          <div style={{ position: 'fixed', top: '18px', right: '32px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', background: '#fff', borderRadius: '9999px', boxShadow: '0 2px 8px #eee', zIndex: 100 }}>
+            <span className="text-xl" role="img" aria-label="wave">👋</span>
+            <span className="text-blue-700 font-bold">Welcome, {userName}</span>
+            <button
+              onClick={() => { localStorage.removeItem('edulearn_user_name'); window.location.reload(); }}
+              style={{ marginLeft: 8, background: '#e33', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, cursor: 'pointer' }}
+            >Logout</button>
+          </div>
+        ) : (
+          <Link href="/login" style={{ position: 'fixed', top: '18px', right: '32px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', background: '#fff', borderRadius: '9999px', boxShadow: '0 2px 8px #eee', zIndex: 100 }}>
+            <span className="text-xl" role="img" aria-label="login">🔑</span>
+            <span className="hidden sm:inline text-blue-700 font-bold">Login</span>
+          </Link>
+        )}
         {/* iOS helper will show below when appropriate */}
       </header>
       <main className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">

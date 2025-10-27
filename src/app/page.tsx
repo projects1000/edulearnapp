@@ -16,6 +16,29 @@ export default function Home() {
   });
   const [userName, setUserName] = useState<string | null>(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+    const [sessionInvalid, setSessionInvalid] = useState(false);
+    useEffect(() => {
+      async function checkSession() {
+        const mobile = localStorage.getItem("edulearn_user_mobile");
+        const sessionToken = localStorage.getItem("edulearn_user_sessionToken");
+        if (!mobile || !sessionToken) return;
+        try {
+          const res = await fetch("/api/session-check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mobile, sessionToken })
+          });
+          const data = await res.json();
+          if (!data.valid) {
+            setSessionInvalid(true);
+            localStorage.clear();
+          }
+        } catch {}
+      }
+      checkSession();
+      const interval = setInterval(checkSession, 30000); // check every 30s
+      return () => clearInterval(interval);
+    }, []);
   const firstPromptFlag = 'pwa_first_visit_shown';
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 

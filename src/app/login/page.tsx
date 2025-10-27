@@ -6,6 +6,30 @@ export default function LoginRegisterPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [form, setForm] = useState({ name: "", mobile: "", password: "" });
   const [status, setStatus] = useState<string | null>(null);
+    // Session validation for single device login
+    const [sessionInvalid, setSessionInvalid] = useState(false);
+    useEffect(() => {
+      async function checkSession() {
+        const mobile = localStorage.getItem("edulearn_user_mobile");
+        const sessionToken = localStorage.getItem("edulearn_user_sessionToken");
+        if (!mobile || !sessionToken) return;
+        try {
+          const res = await fetch("/api/session-check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mobile, sessionToken })
+          });
+          const data = await res.json();
+          if (!data.valid) {
+            setSessionInvalid(true);
+            localStorage.clear();
+          }
+        } catch {}
+      }
+      checkSession();
+      const interval = setInterval(checkSession, 30000); // check every 30s
+      return () => clearInterval(interval);
+    }, []);
 
   // Always clear form fields on mount and when switching between login/register
   useEffect(() => {
@@ -39,7 +63,11 @@ export default function LoginRegisterPage() {
       }
       setStatus("success");
       if (data?.user?.name) {
-        try { localStorage.setItem("edulearn_user_name", data.user.name); } catch {}
+        try {
+          localStorage.setItem("edulearn_user_name", data.user.name);
+          if (data.user.sessionToken) localStorage.setItem("edulearn_user_sessionToken", data.user.sessionToken);
+          if (data.user.mobile) localStorage.setItem("edulearn_user_mobile", data.user.mobile);
+        } catch {}
       }
       setForm({ name: "", mobile: "", password: "" });
       if (!isRegister) window.location.href = "/";
@@ -78,6 +106,15 @@ export default function LoginRegisterPage() {
       {status && status !== "loading" && status !== "success" && (
         <p style={{ color: "red" }}>{status}</p>
       )}
+        {sessionInvalid && (
+          <div className="fixed inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center z-50">
+            <div className="bg-red-100 border border-red-400 rounded-xl px-8 py-6 shadow-lg flex flex-col items-center">
+              <span className="text-4xl mb-2" role="img" aria-label="locked">🔒</span>
+              <span className="text-red-700 font-bold text-lg mb-2">You have logged in on another device.</span>
+              <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => window.location.href = "/login"}>Go to Login</button>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

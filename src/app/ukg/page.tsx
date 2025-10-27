@@ -1229,6 +1229,31 @@ function FindMyNumberTask() {
    UKGPage (main)
    ============================ */
 function UKGPage() {
+  // Session validation for single device login
+  const [sessionInvalid, setSessionInvalid] = useState(false);
+  useEffect(() => {
+    async function checkSession() {
+      const mobile = localStorage.getItem("edulearn_user_mobile");
+      const sessionToken = localStorage.getItem("edulearn_user_sessionToken");
+      if (!mobile || !sessionToken) return;
+      try {
+        const res = await fetch("/api/session-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mobile, sessionToken })
+        });
+        const data = await res.json();
+        if (!data.valid) {
+          setSessionInvalid(true);
+          localStorage.clear();
+        }
+      } catch {}
+    }
+    checkSession();
+    const interval = setInterval(checkSession, 30000); // check every 30s
+    return () => clearInterval(interval);
+  }, []);
+
   // check local unlock key
   const [isUnlocked, setIsUnlocked] = useState(() => {
     try {
@@ -1255,15 +1280,17 @@ function UKGPage() {
 
   return (
     <div>
-      <div className="w-full max-w-2xl mx-auto mb-4">
-        <div className="bg-gray-100 rounded p-2 text-xs text-gray-700 mb-2">
-          <strong>Debug:</strong> localStorage.edulearn_user_name ={" "}
-          {JSON.stringify(typeof window !== "undefined" ? localStorage.getItem("edulearn_user_name") : null)} <br />
-          <strong>isUnlocked:</strong> {String(isUnlocked)}
-        </div>
-      </div>
 
       <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 flex flex-col items-center justify-center p-4 sm:p-8">
+        {sessionInvalid && (
+          <div className="fixed inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center z-50">
+            <div className="bg-red-100 border border-red-400 rounded-xl px-8 py-6 shadow-lg flex flex-col items-center">
+              <span className="text-4xl mb-2" role="img" aria-label="locked">🔒</span>
+              <span className="text-red-700 font-bold text-lg mb-2">You have logged in on another device.</span>
+              <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => window.location.href = "/login"}>Go to Login</button>
+            </div>
+          </div>
+        )}
         <header className="w-full max-w-2xl text-center mb-4">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-yellow-700 mb-2 drop-shadow-lg">UKG Subjects</h1>
         </header>

@@ -1038,10 +1038,14 @@ function FindMyNumberTask() {
   }
 
   const total = 5;
-  const [leftNumbers, setLeftNumbers] = useState<number[]>(() => {
-    const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
-    return arr;
-  });
+  function uniqueRandomNumbers(count: number, min: number, max: number): number[] {
+    const set = new Set<number>();
+    while (set.size < count) {
+      set.add(Math.floor(Math.random() * (max - min + 1)) + min);
+    }
+    return Array.from(set);
+  }
+  const [leftNumbers, setLeftNumbers] = useState<number[]>(() => uniqueRandomNumbers(total, 10, 99));
   const [rightItems, setRightItems] = useState<Array<{ id: string; word: string }>>(() =>
     shuffleArray(leftNumbers.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() })))
   );
@@ -1083,9 +1087,9 @@ function FindMyNumberTask() {
       clearTimeout(resetTimerRef.current);
       resetTimerRef.current = null;
     }
-    const arr = Array.from({ length: total }, () => Math.floor(Math.random() * 90) + 10);
-    setLeftNumbers(arr);
-    setRightItems(shuffleArray(arr.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
+  const arr = uniqueRandomNumbers(total, 10, 99);
+  setLeftNumbers(arr);
+  setRightItems(shuffleArray(arr.map((n, i) => ({ id: `r-${i}`, word: numberSpellings[n] || n.toString() }))));
     setMatched({});
     setResult(null);
   }
@@ -1287,7 +1291,13 @@ function UKGPage() {
             <div className="bg-red-100 border border-red-400 rounded-xl px-8 py-6 shadow-lg flex flex-col items-center">
               <span className="text-4xl mb-2" role="img" aria-label="locked">🔒</span>
               <span className="text-red-700 font-bold text-lg mb-2">You have logged in on another device.</span>
-              <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => window.location.href = "/login"}>Go to Login</button>
+              <button
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={() => {
+                  try { localStorage.clear(); } catch {}
+                  window.location.href = "/login";
+                }}
+              >Go to Login</button>
             </div>
           </div>
         )}

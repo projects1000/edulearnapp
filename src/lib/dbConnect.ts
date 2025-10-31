@@ -1,28 +1,8 @@
-import mongoose from "mongoose";
+import { Pool } from 'pg';
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/edulearnapp";
+const pool = new Pool({
+  connectionString: 'postgresql://playschool:mKzypUO0AJjPJ1NPNtHxGmJdPYP6uzgC@dpg-d3kj2cnfte5s738dtc20-a.oregon-postgres.render.com/playschooldb',
+  ssl: { rejectUnauthorized: false }
+});
 
-if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable inside .env.local");
-}
-
-let cached = (global as any).mongoose || { conn: null, promise: null };
-
-async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-    }).then((mongoose) => {
-      return mongoose;
-    });
-  }
-  cached.conn = await cached.promise;
-  return cached.conn;
-}
-
-(global as any).mongoose = cached;
-
-export default dbConnect;
+export default pool;

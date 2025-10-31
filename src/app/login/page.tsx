@@ -1,8 +1,10 @@
 
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginRegisterPage() {
+  const router = useRouter();
   const [isRegister, setIsRegister] = useState(false);
   const [form, setForm] = useState({ name: "", mobile: "", password: "" });
   const [status, setStatus] = useState<string | null>(null);
@@ -34,10 +36,16 @@ export default function LoginRegisterPage() {
           localStorage.setItem("edulearn_user_name", data.user.name);
           if (data.user.sessionToken) localStorage.setItem("edulearn_user_sessionToken", data.user.sessionToken);
           if (data.user.mobile) localStorage.setItem("edulearn_user_mobile", data.user.mobile);
+          localStorage.setItem("edulearn_user_premium", data.user.premium ? "1" : "0");
         } catch {}
       }
+      if (isRegister) {
+        // Redirect to login with mobile and password auto-filled
+        router.push(`/login?mobile=${encodeURIComponent(form.mobile)}&password=${encodeURIComponent(form.password)}`);
+      } else {
+        window.location.href = "/";
+      }
       setForm({ name: "", mobile: "", password: "" });
-      if (!isRegister) window.location.href = "/";
     } catch (err: any) {
       setStatus("error");
       if (err?.message) setStatus(err.message);
@@ -45,7 +53,17 @@ export default function LoginRegisterPage() {
   };
 
   useEffect(() => {
-    setForm({ name: "", mobile: "", password: "" });
+    // If coming from registration, auto-populate mobile and password from query params
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const mobile = params.get("mobile") || "";
+      const password = params.get("password") || "";
+      if (mobile || password) {
+        setForm((prev) => ({ ...prev, mobile, password }));
+      } else {
+        setForm({ name: "", mobile: "", password: "" });
+      }
+    }
   }, [isRegister]);
 
   useEffect(() => {

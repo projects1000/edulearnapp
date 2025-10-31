@@ -15,8 +15,15 @@ export default function Home() {
     try { return localStorage.getItem('edulearn_installed') === '1'; } catch { return false; }
   });
   const [userName, setUserName] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean>(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
-    const [sessionInvalid, setSessionInvalid] = useState(false);
+  const [sessionInvalid, setSessionInvalid] = useState(false);
+  const [lockModal, setLockModal] = useState(false);
+  const [pendingRoute, setPendingRoute] = useState("");
+
+  function handleGameClick(route: string) {
+    window.location.href = route;
+  }
     useEffect(() => {
       async function checkSession() {
         const mobile = localStorage.getItem("edulearn_user_mobile");
@@ -32,6 +39,9 @@ export default function Home() {
           if (!data.valid) {
             setSessionInvalid(true);
             localStorage.clear();
+          } else {
+            setIsPremium(!!data.premium);
+            localStorage.setItem("edulearn_user_premium", data.premium ? "1" : "0");
           }
         } catch {}
       }
@@ -98,6 +108,8 @@ export default function Home() {
     try {
       const name = localStorage.getItem('edulearn_user_name');
       if (name) setUserName(name);
+      const premium = localStorage.getItem('edulearn_user_premium');
+      setIsPremium(premium === '1');
     } catch {}
 
     return () => {
@@ -124,8 +136,11 @@ export default function Home() {
           <div style={{ position: 'fixed', top: '18px', right: '32px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', background: '#fff', borderRadius: '9999px', boxShadow: '0 2px 8px #eee', zIndex: 100 }}>
             <span className="text-xl" role="img" aria-label="wave">👋</span>
             <span className="text-blue-700 font-bold">Welcome, {userName}</span>
+            {!isPremium && (
+              <Link href="/payment" className="ml-4 bg-yellow-400 text-white px-4 py-2 rounded font-bold shadow hover:bg-yellow-500 transition">Upgrade to Premium</Link>
+            )}
             <button
-              onClick={() => { localStorage.removeItem('edulearn_user_name'); window.location.reload(); }}
+              onClick={() => { localStorage.clear(); window.location.reload(); }}
               style={{ marginLeft: 8, background: '#e33', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, cursor: 'pointer' }}
             >Logout</button>
           </div>
@@ -139,25 +154,41 @@ export default function Home() {
       </header>
       <main className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">
         {/* Nursery Card */}
-        <div className="rounded-3xl shadow-lg flex flex-col items-center justify-center p-8 transition-transform hover:scale-105 cursor-pointer bg-pink-200">
+        <div className="rounded-3xl shadow-lg flex flex-col items-center justify-center p-8 transition-transform hover:scale-105 cursor-pointer bg-pink-200" onClick={() => handleGameClick("/nursery")}> 
           <span className="text-6xl mb-4">🧸</span>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Nursery</h2>
           <p className="text-base text-gray-600">Explore fun activities & games!</p>
         </div>
         {/* LKG Card */}
-        <div className="rounded-3xl shadow-lg flex flex-col items-center justify-center p-8 transition-transform hover:scale-105 cursor-pointer bg-blue-200">
+        <div className="rounded-3xl shadow-lg flex flex-col items-center justify-center p-8 transition-transform hover:scale-105 cursor-pointer bg-blue-200" onClick={() => handleGameClick("/lkg")}> 
           <span className="text-6xl mb-4">🎨</span>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">LKG</h2>
           <p className="text-base text-gray-600">Explore fun activities & games!</p>
         </div>
         {/* UKG Card - Navigates to UKG Page */}
-        <Link href="/ukg" className="rounded-3xl shadow-lg flex flex-col items-center justify-center p-8 transition-transform hover:scale-105 cursor-pointer bg-yellow-200 w-full">
+        <div className="rounded-3xl shadow-lg flex flex-col items-center justify-center p-8 transition-transform hover:scale-105 cursor-pointer bg-yellow-200 w-full" onClick={() => handleGameClick("/ukg")}> 
           <span className="text-6xl mb-4">📚</span>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">UKG</h2>
           <p className="text-base text-gray-600 mb-4">Click to see UKG activities!</p>
+        </div>
+        {/* Marketing Landing Page Link */}
+        <Link href="/landing" className="rounded-3xl shadow-lg flex flex-col items-center justify-center p-8 transition-transform hover:scale-105 cursor-pointer bg-gradient-to-r from-pink-400 to-blue-400 w-full">
+          <span className="text-6xl mb-4">🌍</span>
+          <h2 className="text-2xl font-bold text-white mb-2">Global Launch</h2>
+          <p className="text-base text-white mb-4">See why EduLearn is perfect for kids worldwide!</p>
         </Link>
-        {/* The app will prompt automatically on first visit for supporting Android browsers. */}
       </main>
+      {/* Lock modal for non-premium users */}
+      {lockModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center">
+            <span className="text-5xl mb-2" role="img" aria-label="locked">🔒</span>
+            <span className="text-red-600 font-semibold text-lg mb-4">Please upgrade to premium to unlock this game.</span>
+            <Link href="/payment" className="bg-yellow-400 text-white px-4 py-2 rounded font-bold shadow hover:bg-yellow-500 transition mb-2">Upgrade to Premium</Link>
+            <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded" onClick={() => setLockModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
       {/* UKG Tasks Section removed, now on separate page */}
       <footer className="mt-12 text-center text-sm text-gray-500">
         ©2025 Edulearn Play factory. All right reserved

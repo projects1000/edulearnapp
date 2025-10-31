@@ -33,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <script src="/razorpay.js" async></script>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icon-192.png" />
@@ -46,7 +47,7 @@ export default function RootLayout({
         {/* Floating login icon for desktop only */}
   <div className="fixed top-4 right-6 z-30">
           <Link href="/login" className="flex items-center gap-2 bg-white bg-opacity-80 rounded-full shadow-lg px-3 py-2 hover:bg-yellow-100 transition">
-            <img src="/icon-login.svg" alt="Login" className="w-6 h-6" />
+            <span className="text-xl" role="img" aria-label="login">🔑</span>
             <span className="font-bold text-sm text-pink-700">Login</span>
             {userName && (
               <span className="ml-2 font-bold text-sm text-gray-700">{userName}</span>

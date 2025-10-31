@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 /* ============================
    LockedOverlay (for locked content)
    ============================ */
-function LockedOverlay() {
+function LockedOverlay({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [showPopup, setShowPopup] = React.useState(false);
   const handleBlock = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
@@ -57,7 +57,9 @@ function LockedOverlay() {
               🔒
             </span>
             <span className="text-red-600 font-semibold text-lg">
-              Login to unlock and play this game.
+              {isLoggedIn
+                ? "Upgrade to premium to unlock and play this game."
+                : "Login to unlock and play this game."}
             </span>
           </div>
         </div>
@@ -1258,8 +1260,15 @@ function UKGPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // check local unlock key
-  const [isUnlocked, setIsUnlocked] = useState(() => {
+  // check login and premium status
+  const [isPremium, setIsPremium] = useState(() => {
+    try {
+      return localStorage.getItem("edulearn_user_premium") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try {
       return !!localStorage.getItem("edulearn_user_name");
     } catch {
@@ -1267,10 +1276,16 @@ function UKGPage() {
     }
   });
   useEffect(() => {
-    const updateUnlock = () => setIsUnlocked(!!localStorage.getItem("edulearn_user_name"));
-    updateUnlock();
-    window.addEventListener("storage", updateUnlock);
-    return () => window.removeEventListener("storage", updateUnlock);
+    const updatePremium = () => setIsPremium(localStorage.getItem("edulearn_user_premium") === "1");
+    const updateLogin = () => setIsLoggedIn(!!localStorage.getItem("edulearn_user_name"));
+    updatePremium();
+    updateLogin();
+    window.addEventListener("storage", updatePremium);
+    window.addEventListener("storage", updateLogin);
+    return () => {
+      window.removeEventListener("storage", updatePremium);
+      window.removeEventListener("storage", updateLogin);
+    };
   }, []);
 
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -1282,9 +1297,40 @@ function UKGPage() {
     { key: "puzzle", label: "Puzzle" }
   ];
 
+  // ...existing code...
+  // Add userName state for welcome message
+  const [userName, setUserName] = useState<string | null>(null);
+  const [sessionInvalid, setSessionInvalid] = useState(false);
+  useEffect(() => {
+    try {
+      const name = localStorage.getItem('edulearn_user_name');
+      if (name) setUserName(name);
+    } catch {}
+    // Session check logic (same as home page)
+    async function checkSession() {
+      const mobile = localStorage.getItem("edulearn_user_mobile");
+      const sessionToken = localStorage.getItem("edulearn_user_sessionToken");
+      if (!mobile || !sessionToken) return;
+      try {
+        const res = await fetch("/api/session-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mobile, sessionToken })
+        });
+        const data = await res.json();
+        if (!data.valid) {
+          setSessionInvalid(true);
+          localStorage.clear();
+        }
+      } catch {}
+    }
+    checkSession();
+    const interval = setInterval(checkSession, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div>
-
       <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 flex flex-col items-center justify-center p-4 sm:p-8">
         {sessionInvalid && (
           <div className="fixed inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center z-50">
@@ -1301,8 +1347,15 @@ function UKGPage() {
             </div>
           </div>
         )}
-        <header className="w-full max-w-2xl text-center mb-4">
+        <header className="w-full max-w-2xl text-center mb-4 relative">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-yellow-700 mb-2 drop-shadow-lg">UKG Subjects</h1>
+          {/* Show welcome message if logged in */}
+          {userName && (
+            <div style={{ position: 'fixed', top: '18px', right: '32px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', background: '#fff', borderRadius: '9999px', boxShadow: '0 2px 8px #eee', zIndex: 100 }}>
+              <span className="text-xl" role="img" aria-label="wave">👋</span>
+              <span className="text-blue-700 font-bold">Welcome, {userName}</span>
+            </div>
+          )}
         </header>
 
         <main className="w-full max-w-2xl flex flex-col gap-6">
@@ -1361,8 +1414,8 @@ function UKGPage() {
                 {activeTask === "addition" && <AdditionTask />}
                 {activeTask === "subtraction" && <SubtractionTask />}
                 {activeTask === "magicBox10" && <MagicBoxOf10 />}
-                {/* block interaction if locked */}
-                {activeTask && !isUnlocked && <LockedOverlay />}
+                {/* block interaction if not logged in or not premium */}
+                {activeTask && (!isLoggedIn || !isPremium) && <LockedOverlay isLoggedIn={isLoggedIn} />}
               </div>
 
               <button className="mt-2 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold" onClick={() => { setSelectedSubject(null); setActiveTask(null); }}>
@@ -1382,7 +1435,7 @@ function UKGPage() {
 
               <div className="w-full mt-6 relative">
                 {activeTask === "numberSpelling" && <EnglishNumberSpellingTask />}
-                {activeTask === "numberSpelling" && !isUnlocked && <LockedOverlay />}
+                {activeTask === "numberSpelling" && (!isLoggedIn || !isPremium) && <LockedOverlay isLoggedIn={isLoggedIn} />}
               </div>
 
               <button className="mt-4 flex items-center gap-2 justify-center px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-lg shadow transition-colors font-semibold" onClick={() => { setSelectedSubject(null); setActiveTask(null); }}>
@@ -1400,8 +1453,8 @@ function UKGPage() {
                 Locked Task
               </button>
               <div className="w-full mt-6 relative">
-                {activeTask === "lockedTask" && !isUnlocked && <LockedOverlay />}
-                {isUnlocked && activeTask === "lockedTask" && <div className="text-center text-gray-500 p-6 rounded-lg">Coming soon!</div>}
+                {activeTask === "lockedTask" && (!isLoggedIn || !isPremium) && <LockedOverlay isLoggedIn={isLoggedIn} />}
+                {isLoggedIn && isPremium && activeTask === "lockedTask" && <div className="text-center text-gray-500 p-6 rounded-lg">Coming soon!</div>}
               </div>
 
               <button className="mt-4 flex items-center justify-center w-10 h-10 bg-blue-100 hover:bg-blue-200 rounded-full text-blue-600 text-2xl shadow transition-colors" onClick={() => { setSelectedSubject(null); setActiveTask(null); }}>

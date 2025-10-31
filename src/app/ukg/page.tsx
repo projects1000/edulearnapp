@@ -1236,7 +1236,7 @@ function FindMyNumberTask() {
    ============================ */
 function UKGPage() {
   // Session validation for single device login
-  const [sessionInvalid, setSessionInvalid] = useState(false);
+  // Remove duplicate sessionInvalid declaration
   useEffect(() => {
     async function checkSession() {
       const mobile = localStorage.getItem("edulearn_user_mobile");
